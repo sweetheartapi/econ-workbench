@@ -1,0 +1,291 @@
+---
+title: "Bootstrap lab"
+subtitle: "Three lines of R that replace pages of algebra"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+
+The whole bootstrap fits in one line of R:
+
+```r
+replicate(B, statistic(sample(data, replace = TRUE)))
+```
+
+`sample(data, replace = TRUE)` draws a bootstrap sample of the same size as your data; `replicate(B, ...)` does it `B` times. Everything in this lab builds on that line.
+
+## Exercise 1: bootstrap the median
+
+The 25 dice throws from the lesson are loaded as `dice`. Produce 2,000 bootstrap medians.
+
+```{webr}
+#| setup: true
+#| exercise: boot_median
+set.seed(1)
+dice <- c(rep(1, 2), rep(2, 1), rep(3, 8), rep(4, 7), rep(5, 3), rep(6, 4))
+```
+
+```{webr}
+#| exercise: boot_median
+boot_medians <- replicate(2000, median(______))
+
+hist(boot_medians, breaks = seq(0.75, 6.25, by = 0.25), col = "#D6334A55",
+     main = "2,000 bootstrap medians", xlab = "median")
+boot_medians
+```
+
+```{webr}
+#| exercise: boot_median
+#| check: true
+if (!is.numeric(.result) || length(.result) != 2000) {
+  list(correct = FALSE, message = "You should end up with 2,000 numbers, one median per bootstrap sample.")
+} else if (length(unique(.result)) == 1) {
+  list(correct = FALSE, message = "Every median is identical. Are you resampling? Without replace = TRUE you just shuffle the same data.")
+} else if (all(.result %in% seq(1, 6, by = 0.5))) {
+  list(correct = TRUE, message = sprintf("Bootstrap standard error of the median: %.2f. Notice the medians only take a few values: with whole-number data, the median can't be anything else.", sd(.result)))
+} else {
+  list(correct = FALSE, message = "Something's off: medians of dice throws should be whole or half numbers between 1 and 6.")
+}
+```
+
+::: {.hint exercise="boot_median"}
+Inside `median()`, draw a resample of `dice` with replacement: `sample(dice, replace = TRUE)`.
+:::
+
+::: {.solution exercise="boot_median"}
+```r
+boot_medians <- replicate(2000, median(sample(dice, replace = TRUE)))
+hist(boot_medians, breaks = seq(0.75, 6.25, by = 0.25), col = "#D6334A55",
+     main = "2,000 bootstrap medians", xlab = "median")
+boot_medians
+```
+:::
+
+## Exercise 2: a percentile interval
+
+The 95% percentile interval is simply the 2.5% and 97.5% quantiles of the bootstrap distribution.
+
+```{webr}
+#| setup: true
+#| exercise: percentile
+set.seed(1)
+dice <- c(rep(1, 2), rep(2, 1), rep(3, 8), rep(4, 7), rep(5, 3), rep(6, 4))
+boot_means <- replicate(2000, mean(sample(dice, replace = TRUE)))
+```
+
+```{webr}
+#| exercise: percentile
+ci_boot <- quantile(boot_means, probs = ______)
+ci_t    <- t.test(dice)$conf.int
+
+rbind(bootstrap = ci_boot, textbook_t = ci_t)
+```
+
+```{webr}
+#| exercise: percentile
+#| check: true
+target <- with(.envir_result, quantile(boot_means, c(0.025, 0.975)))
+if (is.matrix(.result) && isTRUE(all.equal(unname(.result[1, ]), unname(target)))) {
+  list(correct = TRUE, message = "The two intervals nearly agree. For a mean with reasonable n, the bootstrap reproduces the textbook answer without any formula.")
+} else {
+  list(correct = FALSE, message = "You need two probabilities: one that cuts off the bottom 2.5% and one that cuts off the top 2.5%.")
+}
+```
+
+::: {.hint exercise="percentile"}
+`c(0.025, 0.975)`
+:::
+
+::: {.solution exercise="percentile"}
+```r
+ci_boot <- quantile(boot_means, probs = c(0.025, 0.975))
+ci_t    <- t.test(dice)$conf.int
+rbind(bootstrap = ci_boot, textbook_t = ci_t)
+```
+:::
+
+## Exercise 3: bootstrap a regression slope
+
+For regressions we resample **whole rows** (the "pairs bootstrap"), so each $x$ stays with its own $y$. We use the heteroskedastic data from the regression lab, where the classical standard error was too small.
+
+```{webr}
+#| setup: true
+#| exercise: pairs
+set.seed(3)
+x <- runif(200, -3, 3)
+y <- 1 + 3 * x + x * rnorm(200)
+d <- data.frame(x, y)
+```
+
+```{webr}
+#| exercise: pairs
+boot_slopes <- replicate(2000, {
+  rows <- sample(nrow(d), replace = ______)
+  coef(lm(y ~ x, data = d[rows, ]))[["x"]]
+})
+
+c(bootstrap = sd(boot_slopes),
+  classical = summary(lm(y ~ x, data = d))$coefficients["x", "Std. Error"])
+```
+
+```{webr}
+#| exercise: pairs
+#| check: true
+robust <- with(.envir_result, {
+  f <- lm(y ~ x, data = d); X <- cbind(1, d$x); e <- residuals(f)
+  b <- solve(crossprod(X)); sqrt((b %*% crossprod(X * e) %*% b)[2, 2])
+})
+if (is.numeric(.result) && length(.result) == 2 && abs(.result[[1]] - robust) / robust < 0.15) {
+  list(correct = TRUE, message = sprintf("Bootstrap SE %.3f vs classical %.3f. The pairs bootstrap lands close to the robust (sandwich) standard error you computed in the regression lab (%.3f), without being told anything about heteroskedasticity.", .result[[1]], .result[[2]], robust))
+} else if (is.numeric(.result) && length(.result) == 2 && .result[[1]] < 1e-8) {
+  list(correct = FALSE, message = "The bootstrap SE is zero, so every resample was the original data. Resampling must be with replacement.")
+} else {
+  list(correct = FALSE, message = "Not quite. Draw row numbers with replacement.")
+}
+```
+
+::: {.hint exercise="pairs"}
+Same rule as always: `TRUE`.
+:::
+
+::: {.solution exercise="pairs"}
+```r
+boot_slopes <- replicate(2000, {
+  rows <- sample(nrow(d), replace = TRUE)
+  coef(lm(y ~ x, data = d[rows, ]))[["x"]]
+})
+c(bootstrap = sd(boot_slopes),
+  classical = summary(lm(y ~ x, data = d))$coefficients["x", "Std. Error"])
+```
+:::
+
+## Exercise 4: pick one bag
+
+You must estimate the centre of a distribution and can use either the **mean** or the **median**. Which is better depends on the data. We'll judge by mean squared error, $\text{MSE} = \text{bias}^2 + \text{variance}$, over many simulated samples where we know the true centre is 0.
+
+The data here come from a *t*-distribution with 2 degrees of freedom: symmetric around 0, but with very heavy tails (occasional huge values). Compute each estimator's MSE.
+
+```{webr}
+#| setup: true
+#| exercise: bags
+set.seed(11)
+samples <- replicate(5000, rt(25, df = 2))   # 5,000 samples of size 25, one per column
+means   <- apply(samples, 2, mean)
+medians <- apply(samples, 2, median)
+```
+
+```{webr}
+#| exercise: bags
+truth <- 0
+mse_mean   <- mean((means - truth)^2)
+mse_median <- ______
+
+c(mean = mse_mean, median = mse_median)
+```
+
+```{webr}
+#| exercise: bags
+#| check: true
+target <- with(.envir_result, mean((medians - 0)^2))
+if (is.numeric(.result) && length(.result) == 2 && abs(.result[[2]] - target) < 1e-10) {
+  list(correct = TRUE, message = sprintf("The median wins by a mile (MSE %.3f vs %.3f). Both are unbiased here, but the mean gets dragged around by the extreme values. Try the next cell to see the mean win when tails are light.", .result[[2]], .result[[1]]))
+} else {
+  list(correct = FALSE, message = "Same recipe as the line above, with the medians instead of the means.")
+}
+```
+
+::: {.hint exercise="bags"}
+`mean((medians - truth)^2)`
+:::
+
+::: {.solution exercise="bags"}
+```r
+truth <- 0
+mse_mean   <- mean((means - truth)^2)
+mse_median <- mean((medians - truth)^2)
+c(mean = mse_mean, median = mse_median)
+```
+:::
+
+Now flip the situation. With light tails (close to normal data) the ranking reverses. Change `df` and rerun:
+
+```{webr}
+set.seed(11)
+df <- 30        # try 2, 3, 5, 30
+samples <- replicate(5000, rt(25, df = df))
+c(mse_mean   = mean(apply(samples, 2, mean)^2),
+  mse_median = mean(apply(samples, 2, median)^2))
+```
+
+::: {.column-margin}
+[no estimator is best everywhere: it depends on the world you're in]{.scribble}
+:::
+
+In real life you don't know the truth, so you can't run this simulation directly. But you *can* bootstrap from your data, treating your sample as the population, to compare the two estimators' variability. That's the "bootstrap in choosing estimators" idea from the slides.
+
+## Exercise 5: break the bootstrap
+
+The lesson showed that the bootstrap fails for the sample maximum. Confirm the 63% figure: what share of bootstrap maxima are *exactly* equal to the original maximum?
+
+```{webr}
+#| setup: true
+#| exercise: breakit
+set.seed(4)
+x <- runif(200)          # uniform on [0, 1]; the true maximum possible value is 1
+boot_max <- replicate(5000, max(sample(x, replace = TRUE)))
+```
+
+```{webr}
+#| exercise: breakit
+share_equal <- mean(boot_max == ______)
+c(share_equal = share_equal, theory = 1 - (1 - 1/200)^200)
+```
+
+```{webr}
+#| exercise: breakit
+#| check: true
+if (is.numeric(.result) && length(.result) == 2 && abs(.result[[1]] - .result[[2]]) < 0.03) {
+  list(correct = TRUE, message = sprintf("%.1f%% of bootstrap maxima equal the original maximum, as the theory predicts. In real sampling this probability is zero, so the bootstrap distribution looks nothing like the truth.", 100 * .result[[1]]))
+} else {
+  list(correct = FALSE, message = "Compare each bootstrap maximum with the maximum of the original data, max(x).")
+}
+```
+
+::: {.hint exercise="breakit"}
+The original estimate is `max(x)`.
+:::
+
+::: {.solution exercise="breakit"}
+```r
+share_equal <- mean(boot_max == max(x))
+c(share_equal = share_equal, theory = 1 - (1 - 1/200)^200)
+```
+:::
+
+And the fix, subsampling: draw `m` observations **without** replacement, with `m` much smaller than `n`.
+
+```{webr}
+set.seed(4)
+x <- runif(200); n <- length(x); m <- 20
+sub_err  <- replicate(5000, m * (max(sample(x, m)) - max(x)))
+boot_err <- replicate(5000, n * (max(sample(x, replace = TRUE)) - max(x)))
+
+par(mfrow = c(1, 2))
+hist(boot_err, breaks = 40, col = "#D6334A55", main = "Bootstrap", xlab = "scaled error")
+hist(sub_err,  breaks = 40, col = "#2463EB55", main = "Subsampling", xlab = "scaled error",
+     freq = FALSE)
+curve(exp(x), from = -6, to = 0, add = TRUE, lwd = 2)   # true limiting shape
+```
+
+## Free play
+
+Bootstrap anything you like. Some ideas: the 90th percentile of the incomes below; the correlation between two variables; the ratio of two means.
+
+```{webr}
+set.seed(2024)
+incomes <- round(rlnorm(40, log(1200), 0.7))
+boot_p90 <- replicate(2000, quantile(sample(incomes, replace = TRUE), 0.9))
+hist(boot_p90, breaks = 30, col = "#1F8A5B55", main = "Bootstrap of the 90th percentile")
+quantile(boot_p90, c(0.025, 0.975))
+```
+
+**Back to the start:** [all lessons](../index.qmd).

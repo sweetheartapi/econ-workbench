@@ -1,0 +1,575 @@
+---
+title: "Regression basics"
+subtitle: "Drawing the best line, and knowing how far to trust it"
+---
+
+Regression is the workhorse of econometrics. You will use it for two very different jobs, and it helps to know which one you are doing before you start.
+
+| | Prediction | Explanation |
+|---|---|---|
+| The question | *What will happen?* | *Why did it happen?* |
+| Example | Forecast next month's sales | Does an extra year of school raise wages? |
+| Difficulty | Easier, especially for repeated events | Hard: needs subject knowledge, not just data |
+
+This lesson builds regression from the ground up: first the line, then the uncertainty around it, then the trap that catches most beginners when they try to *explain*.
+
+::: {.callout-note appearance="simple"}
+**How to use this page.** Each section starts with a plain-language idea, then gives you an app to play with, then shows the maths with every symbol translated. The apps run real R in your browser. The first one takes a few seconds to wake up; after that they are quick.
+:::
+
+## The idea: the line that makes the smallest mistakes
+
+You have a cloud of points and want one straight line through it. Any line you draw misses most points a little. The vertical gap between a point and the line is called a **residual**: it is the mistake the line makes for that observation.
+
+Ordinary least squares (OLS) picks the line whose mistakes are smallest in one specific sense: <span class="key">square every mistake, add them up, and make that total as small as possible.</span> The total is called the residual sum of squares, or RSS.
+
+::: {.column-margin}
+[squares punish big misses much more than small ones]{.scribble}
+:::
+
+Why squares? A miss of 2 costs 4, a miss of 4 costs 16. Big mistakes are punished hard, so the line is pulled toward points it would otherwise miss badly. In the app below the squares are drawn literally, so you can see the thing being minimised.
+
+::: {.bench .column-page-right}
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 590
+library(shiny)
+library(bslib)
+
+ink <- "#1B2559"; red <- "#D6334A"; blue <- "#2463EB"; grey <- "#9AA3B5"
+base_par <- function() {
+  par(mar = c(4, 4.2, 1, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.9)
+}
+
+make_data <- function(seed) {
+  set.seed(seed)
+  x <- sort(runif(20, 0.5, 9.5))
+  y <- 2 + 0.8 * x + rnorm(20, 0, 1.5)
+  data.frame(x = x, y = y)
+}
+rss_of <- function(b0, b1, d) sum((d$y - b0 - b1 * d$x)^2)
+
+ui <- page_sidebar(
+  sidebar = sidebar(
+    width = 260,
+    sliderInput("b0", "Intercept (β₀): where the line crosses x = 0",
+                min = -2, max = 6, value = 0.5, step = 0.05),
+    sliderInput("b1", "Slope (β₁): how much y rises per unit of x",
+                min = -0.5, max = 2, value = 1.4, step = 0.01),
+    checkboxInput("squares", "Draw the squared mistakes", TRUE),
+    actionButton("best", "Let R find the best line", class = "btn-primary"),
+    actionButton("new", "Get new data")
+  ),
+  layout_columns(
+    col_widths = c(7, 5),
+    card(card_header("Your line through the data"),
+         plotOutput("scatter", height = "400px")),
+    card(card_header("How big are your mistakes?"),
+         uiOutput("score"),
+         plotOutput("bowl", height = "230px"))
+  )
+)
+
+server <- function(input, output, session) {
+  seed <- reactiveVal(42)
+  observeEvent(input$new, seed(sample.int(1e5, 1)))
+  dat <- reactive(make_data(seed()))
+  ols <- reactive(coef(lm(y ~ x, data = dat())))
+
+  observeEvent(input$best, {
+    updateSliderInput(session, "b0", value = round(ols()[[1]], 2))
+    updateSliderInput(session, "b1", value = round(ols()[[2]], 2))
+  })
+
+  output$scatter <- renderPlot({
+    d <- dat()
+    yhat <- input$b0 + input$b1 * d$x
+    e <- d$y - yhat
+    base_par()
+    plot(d$x, d$y, type = "n", xlim = c(0, 10), ylim = c(-1, 14),
+         xlab = "x", ylab = "y")
+    if (isTRUE(input$squares)) {
+      # convert a vertical length into the horizontal length that looks
+      # the same on screen, so the squares really are square
+      usr <- par("usr"); pin <- par("pin")
+      k <- (diff(usr[1:2]) / pin[1]) / (diff(usr[3:4]) / pin[2])
+      rect(d$x, pmin(d$y, yhat), d$x + abs(e) * k, pmax(d$y, yhat),
+           col = adjustcolor(red, 0.12), border = adjustcolor(red, 0.45))
+    }
+    segments(d$x, d$y, d$x, yhat, col = red, lwd = 1.6)
+    abline(input$b0, input$b1, col = blue, lwd = 3)
+    points(d$x, d$y, pch = 21, bg = ink, col = "white", cex = 1.4)
+  })
+
+  output$score <- renderUI({
+    d <- dat()
+    mine <- rss_of(input$b0, input$b1, d)
+    best <- rss_of(ols()[[1]], ols()[[2]], d)
+    ratio <- mine / best
+    verdict <- if (ratio < 1.005) {
+      "That is the least-squares line. No other line has a smaller total."
+    } else if (ratio < 1.2) {
+      "Very close. Nudge the sliders to shave off the last bit."
+    } else {
+      "Keep going. Watch the red squares shrink."
+    }
+    tags$div(
+      tags$p(style = "margin-bottom:.2rem;",
+             "Your total squared mistake (RSS): ",
+             tags$strong(style = paste0("font-size:1.4rem;color:", red), sprintf("%.1f", mine))),
+      tags$p(style = "margin-bottom:.2rem;",
+             "Smallest possible: ", tags$strong(sprintf("%.1f", best)),
+             sprintf("  (yours is %.2f× that)", ratio)),
+      tags$p(style = "color:#4A5578;font-size:.9rem;", verdict)
+    )
+  })
+
+  output$bowl <- renderPlot({
+    d <- dat()
+    b1s <- seq(-0.5, 2, length.out = 200)
+    r <- sapply(b1s, function(b) rss_of(input$b0, b, d))
+    base_par()
+    par(mar = c(4, 4.2, 1.5, 1))
+    plot(b1s, r, type = "l", lwd = 2, col = ink, xlab = "slope β₁",
+         ylab = "RSS", main = "RSS if you only move the slope",
+         cex.main = 0.9, font.main = 1, col.main = ink)
+    points(input$b1, rss_of(input$b0, input$b1, d), pch = 19, col = red, cex = 1.6)
+    abline(v = b1s[which.min(r)], lty = 2, col = blue)
+  })
+}
+
+shinyApp(ui, server)
+```
+:::
+
+::: {.try-this}
+**Try this**
+
+1. Move only the slope slider and watch the bowl on the right. The red dot rides up and down a U-shape. The best slope sits at the bottom of the bowl, where the curve is flat.
+2. Press *Let R find the best line*, then nudge either slider in any direction. The RSS always goes up. That is what "least squares" means.
+3. Press *Get new data* a few times. The best line moves even though the true relationship (y = 2 + 0.8x plus noise) never changes. Hold on to that thought; it is the whole next section.
+:::
+
+### The maths, decoded
+
+The model says every observation is a straight-line part plus noise:
+
+$$
+y_i = \beta_0 + \beta_1 x_i + \varepsilon_i
+$$
+
+::: {.decoder}
+[Formula decoder]{.decoder-title}
+
+| Symbol | In words |
+|---|---|
+| $y_i$ | the outcome for person (or firm, or country) number $i$ |
+| $x_i$ | the explanatory variable for that same observation |
+| $\beta_0$ | the intercept: predicted $y$ when $x = 0$ |
+| $\beta_1$ | the slope: how much $y$ changes, on average, when $x$ goes up by one |
+| $\varepsilon_i$ | everything else that affects $y_i$ that we don't observe; the "noise" |
+:::
+
+OLS chooses the $\beta$'s that minimise the sum of squared residuals:
+
+$$
+\text{RSS}(\beta_0, \beta_1) = \sum_{i=1}^{n} \big(y_i - \beta_0 - \beta_1 x_i\big)^2
+$$
+
+The bottom of a bowl is where its slope is zero. So we take derivatives, set them to zero, and solve. With many regressors it is neater to stack everything into matrices, $y = X\beta + \varepsilon$, and the answer becomes one line:
+
+$$
+\hat\beta = (X^\top X)^{-1} X^\top y
+$$
+
+::: {.column-margin}
+[the hat ^ means "estimated from our data"]{.scribble .blue}
+:::
+
+::: {.callout-tip collapse="true"}
+## Maths refresher: matrices in one minute
+
+$X$ is just your data table with a column of 1s glued on the left (the 1s are what give you the intercept). Each row is one observation.
+
+$X^\top$ ("X transpose") is the same table flipped on its side. $X^\top X$ collects sums like $\sum x_i$ and $\sum x_i^2$; $X^\top y$ collects sums like $\sum x_i y_i$. The "$^{-1}$" is the matrix version of dividing. So the formula is the multi-variable version of the school formula
+
+$$\hat\beta_1 = \frac{\sum (x_i - \bar x)(y_i - \bar y)}{\sum (x_i - \bar x)^2},$$
+
+which reads: *how much $x$ and $y$ move together, divided by how much $x$ moves on its own*. In the lab you compute both by hand and check that R's `lm()` agrees.
+:::
+
+### Fitting is projecting
+
+There is a lovely geometric fact hiding here. The fitted values $\hat y = X\hat\beta$ are the *shadow* of $y$ on the space of all things you can build from your regressors, and the residuals are what sticks out at a right angle. That is why residuals are always uncorrelated with the fitted values and with every regressor: the right angle guarantees it. You will verify this numerically in the lab.
+
+### How well does the line fit?
+
+$$
+R^2 = 1 - \frac{\text{RSS}}{\text{TSS}} = 1 - \frac{\sum (y_i - \hat y_i)^2}{\sum (y_i - \bar y)^2}
+$$
+
+$R^2$ is the share of the variation in $y$ that the line accounts for. It matters a lot if you want to **predict** well. For **explanation** a low $R^2$ is not necessarily a problem: education can have a real, well-measured effect on wages even though most wage differences come from other things.
+
+## Your estimate is a random variable
+
+Here is the idea that separates econometrics from curve fitting. The true $\beta_1$ is a fixed number we never see. Our $\hat\beta_1$ is computed from one random sample, so <span class="key">a different sample would have given a different $\hat\beta_1$.</span> The estimate has its own distribution, and its spread is what the **standard error** measures.
+
+We can't redraw real-world samples, but in a simulation we can. The app below knows the truth ($\beta_1 = 0.5$), draws sample after sample, and computes a confidence interval from each one, exactly as a researcher would who only had that one sample.
+
+::: {.bench .column-page-right}
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 560
+library(shiny)
+library(bslib)
+
+ink <- "#1B2559"; red <- "#D6334A"; blue <- "#2463EB"; grey <- "#9AA3B5"
+base_par <- function() {
+  par(mar = c(4, 4.2, 1, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.9)
+}
+true_b0 <- 1
+true_b1 <- 0.5
+
+one_sample <- function(n, sigma, level) {
+  x <- runif(n, 0, 10)
+  y <- true_b0 + true_b1 * x + rnorm(n, 0, sigma)
+  xc <- x - mean(x)
+  b1 <- sum(xc * y) / sum(xc^2)
+  b0 <- mean(y) - b1 * mean(x)
+  s2 <- sum((y - b0 - b1 * x)^2) / (n - 2)
+  se <- sqrt(s2 / sum(xc^2))
+  tq <- qt(1 - (1 - level) / 2, df = n - 2)
+  list(x = x, y = y, b0 = b0, b1 = b1, lo = b1 - tq * se, hi = b1 + tq * se)
+}
+
+ui <- page_sidebar(
+  sidebar = sidebar(
+    width = 250,
+    sliderInput("n", "Sample size n", min = 5, max = 200, value = 20, step = 1),
+    sliderInput("sigma", "Noise (σ of ε)", min = 0.5, max = 6, value = 2.5, step = 0.5),
+    radioButtons("level", "Confidence level",
+                 choices = c("80%" = 0.8, "90%" = 0.9, "95%" = 0.95, "99%" = 0.99),
+                 selected = 0.95, inline = TRUE),
+    actionButton("one", "Draw 1 sample", class = "btn-primary"),
+    actionButton("many", "Draw 50 samples"),
+    actionButton("reset", "Start over", class = "btn-link")
+  ),
+  layout_columns(
+    col_widths = c(5, 7),
+    card(card_header("The latest sample"), plotOutput("sample", height = "330px")),
+    card(card_header("Every interval you have drawn"), plotOutput("cis", height = "330px"))
+  ),
+  uiOutput("tally")
+)
+
+server <- function(input, output, session) {
+  results <- reactiveVal(data.frame(b1 = numeric(), lo = numeric(), hi = numeric()))
+  latest <- reactiveVal(NULL)
+
+  draw <- function(k) {
+    lvl <- as.numeric(input$level)
+    new <- replicate(k, one_sample(input$n, input$sigma, lvl), simplify = FALSE)
+    latest(new[[k]])
+    add <- data.frame(b1 = sapply(new, `[[`, "b1"),
+                      lo = sapply(new, `[[`, "lo"),
+                      hi = sapply(new, `[[`, "hi"))
+    results(rbind(results(), add))
+  }
+  observeEvent(input$one, draw(1))
+  observeEvent(input$many, draw(50))
+  observeEvent(list(input$reset, input$n, input$sigma, input$level), {
+    results(data.frame(b1 = numeric(), lo = numeric(), hi = numeric()))
+    latest(NULL)
+  }, ignoreInit = TRUE)
+
+  output$sample <- renderPlot({
+    s <- latest()
+    base_par()
+    if (is.null(s)) {
+      plot.new(); text(0.5, 0.5, "Press 'Draw 1 sample'", col = grey, cex = 1.1)
+      return(invisible())
+    }
+    plot(s$x, s$y, pch = 21, bg = ink, col = "white", cex = 1.2,
+         xlab = "x", ylab = "y", xlim = c(0, 10))
+    abline(true_b0, true_b1, col = red, lwd = 2, lty = 2)
+    abline(s$b0, s$b1, col = blue, lwd = 3)
+    legend("topleft", bty = "n", lwd = c(2, 3), lty = c(2, 1),
+           col = c(red, blue), legend = c("true line (hidden in real life)", "fitted line"),
+           cex = 0.85, text.col = ink)
+  })
+
+  output$cis <- renderPlot({
+    r <- results()
+    base_par()
+    if (nrow(r) == 0) {
+      plot.new(); text(0.5, 0.5, "Intervals will stack up here", col = grey, cex = 1.1)
+      return(invisible())
+    }
+    show <- tail(r, 100)
+    k <- nrow(show)
+    hit <- show$lo <= true_b1 & show$hi >= true_b1
+    xl <- range(c(show$lo, show$hi, true_b1))
+    plot(NA, xlim = xl, ylim = c(0.5, max(k, 10) + 0.5), yaxt = "n",
+         xlab = "estimated slope with its confidence interval", ylab = "")
+    segments(show$lo, seq_len(k), show$hi, seq_len(k),
+             col = ifelse(hit, blue, red), lwd = ifelse(hit, 1.6, 2.6))
+    points(show$b1, seq_len(k), pch = 19, cex = 0.5, col = ink)
+    abline(v = true_b1, col = red, lwd = 2)
+    mtext("true β₁ = 0.5", side = 3, at = true_b1, col = red, cex = 0.85, line = 0.1)
+  })
+
+  output$tally <- renderUI({
+    r <- results()
+    if (nrow(r) == 0) return(NULL)
+    hit <- sum(r$lo <= true_b1 & r$hi >= true_b1)
+    tags$p(style = "padding:0 1rem;font-size:1.05rem;",
+           sprintf("%d of %d intervals caught the true slope (%.0f%%). Target: %s.",
+                   hit, nrow(r), 100 * hit / nrow(r),
+                   paste0(100 * as.numeric(input$level), "%")),
+           tags$span(style = paste0("color:", red), sprintf(" Misses: %d.", nrow(r) - hit)))
+  })
+}
+
+shinyApp(ui, server)
+```
+:::
+
+::: {.try-this}
+**Try this**
+
+1. Draw 50 samples a few times. Roughly 95% of the intervals should cross the red line. Each single interval either contains the truth or it doesn't; the 95% describes the *procedure*, not any one interval.
+2. Increase *n* from 20 to 200. The intervals get narrower: more data, less uncertainty. How much narrower? Quadrupling $n$ roughly halves the width.
+3. Crank the noise up to 6. Wider intervals again, but the hit rate stays near 95%. The method is honest about its uncertainty.
+4. Set *n* = 5 and the level to 99%. The intervals are huge: that is what a small sample should feel like.
+:::
+
+### The maths, decoded
+
+If the errors are normal with constant variance, the estimator is normally distributed around the truth:
+
+$$
+\hat\beta \sim N\!\big(\beta,\; \sigma^2 (X^\top X)^{-1}\big)
+$$
+
+The standard error of one coefficient is the square root of the matching diagonal entry, with $\sigma^2$ replaced by its estimate $\hat\sigma^2 = \frac{1}{n-p}\sum_i \hat\varepsilon_i^2$. A confidence interval is then
+
+$$
+\hat\beta_j \;\pm\; t_{n-p}^{(\alpha/2)} \times \text{se}(\hat\beta_j)
+$$
+
+::: {.decoder}
+[Formula decoder]{.decoder-title}
+
+| Symbol | In words |
+|---|---|
+| $\sigma^2$ | how noisy the data are; more noise, wider intervals |
+| $(X^\top X)^{-1}$ | shrinks when you have more data or more spread in $x$ |
+| $n - p$ | sample size minus the number of coefficients: your "degrees of freedom" |
+| $t_{n-p}^{(\alpha/2)}$ | a multiplier from the t-distribution, about 2 for a 95% interval with decent $n$ |
+| $\text{se}(\hat\beta_j)$ | the standard error: the typical distance between $\hat\beta_j$ and the truth |
+:::
+
+::: {.callout-warning}
+## Three things a confidence interval does *not* mean
+
+These come from Greenland et al. (2016), a paper worth reading:
+
+- "This particular 95% interval has a 95% chance of containing the true effect." No. After the data are in, it either does or doesn't. The 95% is about how often the *method* works across repeated samples, which is exactly what you watched in the app.
+- "Values outside the interval have been ruled out." No. They are less compatible with the data *under the model's assumptions*, which is weaker.
+- "If two intervals overlap, the difference is not significant." Also no. Overlapping intervals can still correspond to a significant difference.
+
+And for p-values: a p-value is *not* the probability that the null hypothesis is true. It is how surprising your data would be **if** the null and all model assumptions were true.
+:::
+
+## Leaving something out: omitted variable bias
+
+Now the trap. Suppose you study returns to education:
+
+$$
+\log(\text{wage}) = \beta_0 + \beta_1\,\text{education} + \varepsilon
+$$
+
+But **ability** also raises wages, and more able people tend to stay in school longer. Ability isn't in your data, so it hides inside $\varepsilon$. When education goes up, ability tends to come along, and the regression gives education credit for both.
+
+::: {.column-margin}
+[the regression can't tell who deserves the credit]{.scribble}
+:::
+
+In the app you control two things: how strongly ability moves with education, and how much ability itself matters for wages. The true effect of a year of education is fixed at 0.08 (about 8% higher wages).
+
+::: {.bench .column-page-right}
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 560
+library(shiny)
+library(bslib)
+
+ink <- "#1B2559"; red <- "#D6334A"; blue <- "#2463EB"; grey <- "#9AA3B5"
+base_par <- function() {
+  par(mar = c(4, 4.2, 1, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.9)
+}
+true_educ <- 0.08
+
+simulate <- function(g1, b3, seed, n = 400) {
+  set.seed(seed)
+  educ <- pmin(pmax(round(rnorm(n, 13, 2.5)), 8), 20)
+  ability <- g1 * (educ - 13) + rnorm(n)
+  logwage <- 1.5 + true_educ * educ + b3 * ability + rnorm(n, 0, 0.3)
+  data.frame(educ, ability, logwage)
+}
+
+ui <- page_sidebar(
+  sidebar = sidebar(
+    width = 270,
+    sliderInput("g1", "How strongly ability rises with education (γ₁)",
+                min = -0.5, max = 0.5, value = 0.3, step = 0.05),
+    sliderInput("b3", "How much ability raises log wages (β₃)",
+                min = -0.2, max = 0.2, value = 0.1, step = 0.01),
+    checkboxInput("long", "I can measure ability: control for it", FALSE),
+    actionButton("new", "New sample")
+  ),
+  layout_columns(
+    col_widths = c(7, 5),
+    card(card_header("Education and wages (colour = ability)"),
+         plotOutput("scatter", height = "400px")),
+    card(card_header("Where the bias comes from"), uiOutput("decomp"))
+  )
+)
+
+server <- function(input, output, session) {
+  seed <- reactiveVal(7)
+  observeEvent(input$new, seed(sample.int(1e5, 1)))
+  d <- reactive(simulate(input$g1, input$b3, seed()))
+  fits <- reactive({
+    dd <- d()
+    list(short = coef(lm(logwage ~ educ, dd)),
+         long  = coef(lm(logwage ~ educ + ability, dd)),
+         aux   = coef(lm(ability ~ educ, dd)))
+  })
+
+  output$scatter <- renderPlot({
+    dd <- d(); f <- fits()
+    pal <- colorRampPalette(c(blue, "#B9C3D9", red))(50)
+    idx <- cut(dd$ability, 50, labels = FALSE)
+    base_par()
+    plot(jitter(dd$educ, 0.6), dd$logwage, pch = 19, cex = 0.7,
+         col = adjustcolor(pal[idx], 0.75),
+         xlab = "years of education", ylab = "log wage")
+    mx <- mean(dd$educ); my <- mean(dd$logwage)
+    abline(my - true_educ * mx, true_educ, col = ink, lwd = 2.5, lty = 2)
+    abline(f$short, col = red, lwd = 3)
+    if (isTRUE(input$long)) abline(my - f$long[["educ"]] * mx, f$long[["educ"]], col = blue, lwd = 3)
+    leg <- c("true effect (0.08)", "regression without ability")
+    cols <- c(ink, red); ltys <- c(2, 1)
+    if (isTRUE(input$long)) { leg <- c(leg, "regression with ability"); cols <- c(cols, blue); ltys <- c(ltys, 1) }
+    legend("topleft", legend = leg, col = cols, lty = ltys, lwd = 2.5, bty = "n",
+           cex = 0.85, text.col = ink)
+  })
+
+  output$decomp <- renderUI({
+    f <- fits()
+    short <- f$short[["educ"]]; long <- f$long[["educ"]]
+    b3 <- f$long[["ability"]]; g1 <- f$aux[["educ"]]
+    bias <- short - long
+    row <- function(label, value, col = ink) {
+      tags$tr(tags$td(style = "padding:.25rem .5rem;", label),
+              tags$td(style = paste0("padding:.25rem .5rem;text-align:right;font-weight:700;color:", col),
+                      sprintf("%+.3f", value)))
+    }
+    tags$div(
+      tags$table(style = "width:100%;margin-bottom:.8rem;",
+        row("Effect of education, ability held fixed", long, blue),
+        row("× Effect of ability on wages (β₃)", b3),
+        row("× Ability per extra year of school (γ₁)", g1),
+        row("= Bias", bias, red),
+        row("Regression without ability gives", short, red)
+      ),
+      tags$p(style = "font-size:.95rem;",
+             sprintf("Short regression = %.3f + (%.3f × %.3f) = %.3f. ", long, b3, g1, short),
+             "This identity holds exactly in every sample, not just on average."),
+      tags$p(style = "font-size:.95rem;color:#4A5578;",
+             if (abs(bias) < 0.005) "The bias is tiny: either ability doesn't matter for wages, or it doesn't move with education."
+             else if (bias > 0) sprintf("Leaving ability out overstates the return to education by %.0f%%.", 100 * bias / true_educ)
+             else sprintf("Leaving ability out understates the return to education by %.0f%%.", 100 * abs(bias) / true_educ))
+    )
+  })
+}
+
+shinyApp(ui, server)
+```
+:::
+
+::: {.try-this}
+**Try this**
+
+1. Set γ₁ to 0. The bias disappears even though ability still matters for wages: if ability doesn't move with education, it can't be mistaken for it.
+2. Set β₃ to 0 with γ₁ anywhere. No bias either: an irrelevant variable can't distort anything.
+3. Make γ₁ negative and β₃ positive. Now the short regression *understates* the effect. Omitted variables can push your estimate either way.
+4. Tick *control for ability*. The blue line snaps back to the truth. In real data you usually can't measure ability, which is why economists work so hard on research design.
+:::
+
+### The maths, decoded
+
+If ability relates to education as $\text{ability} = \gamma_0 + \gamma_1\,\text{education} + \varepsilon'$, then substituting into the full model gives
+
+$$
+\beta_1^{\text{short}} = \beta_1 + \beta_3\,\gamma_1
+$$
+
+::: {.decoder}
+[Formula decoder]{.decoder-title}
+
+| Symbol | In words |
+|---|---|
+| $\beta_1^{\text{short}}$ | what you estimate when ability is left out |
+| $\beta_1$ | the effect of education holding ability fixed: what you wanted |
+| $\beta_3$ | how much ability itself matters for wages |
+| $\gamma_1$ | how much ability moves with education |
+| $\beta_3\gamma_1$ | the bias: zero only if $\beta_3 = 0$ or $\gamma_1 = 0$ |
+:::
+
+This is also why adding a variable to a regression can change other coefficients completely, sometimes even flipping their sign (Simpson's paradox). The slides point to Pearl's Simpson machine at [dagitty.net/learn/simpson](http://dagitty.net/learn/simpson/index.html) if you want to explore further.
+
+## Reading coefficients correctly
+
+Logs change what a coefficient means. Keep this table nearby; it is the most-used page in any applied econometrics notebook.
+
+| Model | "If $x_1$ goes up by…" | "…then $y$ changes by about" |
+|---|---|---|
+| $y = \beta_0 + \beta_1 x_1 + \dots$ | 1 unit | $\beta_1$ units |
+| $\log y = \beta_0 + \beta_1 x_1 + \dots$ | 1 unit | $100\,\beta_1$ **percent** |
+| $y = \beta_0 + \beta_1 \log x_1 + \dots$ | 1 percent | $\beta_1 / 100$ units |
+| $\log y = \beta_0 + \beta_1 \log x_1 + \dots$ | 1 percent | $\beta_1$ percent (an elasticity) |
+
+Always add "holding the other regressors fixed", and with observational data say "is associated with" rather than "causes" unless your design earns the causal claim.
+
+## Check yourself
+
+::: {.callout-note collapse="true" icon="false"}
+## 1. A classmate's regression has R² = 0.08. Is it useless?
+
+Not necessarily. If the goal is explanation, a precisely estimated coefficient can be informative even when most of the variation in $y$ comes from elsewhere. If the goal is prediction, yes, it will predict poorly.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. You double your sample size. What happens to the standard errors, roughly?
+
+They shrink by a factor of about $\sqrt{2} \approx 1.41$, not by half. Standard errors scale like $1/\sqrt{n}$, which is why the width only halved when you quadrupled $n$ in the app.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Parents' income raises both children's schooling and their later wages. You regress wages on schooling only. Which way is the bias?
+
+Upwards. Parents' income is positively related to schooling ($\gamma_1 > 0$) and to wages ($\beta_3 > 0$), so $\beta_3\gamma_1 > 0$ and the schooling coefficient is too large.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 4. What does "95%" in a 95% confidence interval refer to?
+
+The long-run share of intervals, computed the same way from repeated samples, that would contain the true value, assuming the model is correct. It is a property of the procedure, not of the single interval in your paper.
+:::
+
+**Next:** put this into practice in the [regression lab](../labs/01-regression-lab.qmd), where you compute OLS by hand, check the geometry, and meet heteroskedasticity and collinearity.

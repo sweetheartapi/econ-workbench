@@ -1,0 +1,10 @@
+engine: knitr
+format:
+  live-html:
+    theme: [default, ../styles/theme.scss]
+    toc: true
+    toc-location: left
+    toc-depth: 2
+    toc-title: "On this page"
+    html-math-method: katex
+    code-copy: true

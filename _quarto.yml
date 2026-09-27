@@ -1,0 +1,51 @@
+project:
+  type: website
+  output-dir: _site
+  resources:
+    - shinylive-sw.js
+
+website:
+  title: "Econometrics Workbench"
+  description: "Learn econometrics by seeing it: intuition first, interactive R apps, then the maths."
+  page-navigation: true
+  reader-mode: false
+  sidebar:
+    style: docked
+    search: true
+    contents:
+      - text: "Start here"
+        href: index.qmd
+      - section: "1. Regression basics"
+        contents:
+          - text: "Lesson"
+            href: lessons/01-regression.qmd
+          - text: "Lab"
+            href: labs/01-regression-lab.qmd
+      - section: "2. Maximum likelihood"
+        contents:
+          - text: "Lesson"
+            href: lessons/02-likelihood.qmd
+          - text: "Lab"
+            href: labs/02-likelihood-lab.qmd
+      - section: "3. The bootstrap"
+        contents:
+          - text: "Lesson"
+            href: lessons/03-bootstrap.qmd
+          - text: "Lab"
+            href: labs/03-bootstrap-lab.qmd
+      - text: "How to use this site"
+        href: about.qmd
+  page-footer:
+    left: "Built around the Econometrics lecture notes by Lukáš Lafférs (Matej Bel University)."
+    right: "Runs R in your browser via webR and Shinylive."
+
+format:
+  html:
+    theme: [default, styles/theme.scss]
+    toc: true
+    toc-depth: 2
+    toc-title: "On this page"
+    html-math-method: katex
+    code-copy: true
+    anchor-sections: true
+    smooth-scroll: false

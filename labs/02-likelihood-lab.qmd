@@ -1,0 +1,313 @@
+---
+title: "Likelihood lab"
+subtitle: "Write a likelihood, let the computer climb it"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+
+The recipe for every exercise on this page is the same three steps, so it's worth memorising:
+
+1. Write down the log-likelihood as an R function of the parameters.
+2. Hand it to an optimiser: `optimize()` for one parameter, `optim()` for several.
+3. Read off the peak (the estimate) and the curvature there (the standard error).
+
+::: {.callout-tip appearance="simple"}
+**One R quirk to know.** `optim()` *minimises* by default. So we give it the **negative** log-likelihood: the lowest point of $-\ell$ is the highest point of $\ell$.
+:::
+
+## Exercise 1: the coin, numerically
+
+97 heads in 500 tosses. Write the log-likelihood as a function of `p` and let `optimize()` find the top. `dbinom(k, n, p, log = TRUE)` gives the log of the binomial probability.
+
+```{webr}
+#| exercise: coin
+loglik <- function(p) dbinom(97, 500, p, log = TRUE)
+
+fit <- optimize(loglik, interval = c(0.001, 0.999), maximum = ______)
+fit$maximum
+```
+
+```{webr}
+#| exercise: coin
+#| check: true
+if (is.numeric(.result) && length(.result) == 1 && abs(.result - 97 / 500) < 1e-4) {
+  list(correct = TRUE, message = "0.194: exactly the share of heads, just as the maths predicted.")
+} else if (is.numeric(.result) && length(.result) == 1 && .result < 0.01) {
+  list(correct = FALSE, message = "You found the bottom, not the top. optimize() minimises unless told otherwise.")
+} else {
+  list(correct = FALSE, message = "Not quite. You're looking for the p that makes the log-likelihood as large as possible.")
+}
+```
+
+::: {.hint exercise="coin"}
+You want the maximum, so the argument should be `TRUE`.
+:::
+
+::: {.solution exercise="coin"}
+```r
+loglik <- function(p) dbinom(97, 500, p, log = TRUE)
+fit <- optimize(loglik, interval = c(0.001, 0.999), maximum = TRUE)
+fit$maximum
+```
+:::
+
+## Exercise 2: waiting times, and a trap
+
+We have 100 waiting times between insurance claims. The lesson's model is exponential with **mean** $\lambda$:
+
+$$
+\ell(\lambda) = -n\log\lambda - \frac{\sum_i x_i}{\lambda}.
+$$
+
+Write the *negative* of this and minimise it. The theory says the answer should equal `mean(claims)`.
+
+```{webr}
+#| setup: true
+#| exercise: expo
+set.seed(42)
+claims <- rexp(100, rate = 1 / 5)   # true mean waiting time: 5 days
+```
+
+::: {.column-margin}
+[R's `rexp()` and `dexp()` use the *rate*. rate = 1 / mean.]{.scribble}
+:::
+
+```{webr}
+#| exercise: expo
+n <- length(claims)
+negloglik <- function(lambda) ______
+
+fit <- optimize(negloglik, interval = c(0.01, 50))
+c(mle = fit$minimum, sample_mean = mean(claims))
+```
+
+```{webr}
+#| exercise: expo
+#| check: true
+target <- with(.envir_result, mean(claims))
+if (is.numeric(.result) && length(.result) == 2 && abs(.result[[1]] - target) < 1e-3) {
+  list(correct = TRUE, message = sprintf("The MLE (%.3f) equals the sample mean. Theory confirmed numerically.", target))
+} else if (is.numeric(.result) && length(.result) == 2 && abs(.result[[1]] - 1 / target) < 1e-2) {
+  list(correct = FALSE, message = "You've estimated the rate (1/mean), not the mean. Check how λ enters your formula.")
+} else {
+  list(correct = FALSE, message = "Not yet. The function should return n * log(lambda) + sum(claims) / lambda: the log-likelihood with its sign flipped.")
+}
+```
+
+::: {.hint exercise="expo"}
+Flip the sign of each term: `n * log(lambda) + sum(claims) / lambda`. (Equivalently, `-sum(dexp(claims, rate = 1 / lambda, log = TRUE))`.)
+:::
+
+::: {.solution exercise="expo"}
+```r
+n <- length(claims)
+negloglik <- function(lambda) n * log(lambda) + sum(claims) / lambda
+fit <- optimize(negloglik, interval = c(0.01, 50))
+c(mle = fit$minimum, sample_mean = mean(claims))
+```
+:::
+
+## Exercise 3: a standard error from the curvature
+
+Ask `optim()` for the Hessian (the curvature at the minimum of $-\ell$) and turn it into a standard error with $\text{se} = 1/\sqrt{H}$. Theory says it should be about $\hat\lambda/\sqrt{n}$.
+
+```{webr}
+#| setup: true
+#| exercise: curvature
+set.seed(42)
+claims <- rexp(100, rate = 1 / 5)
+n <- length(claims)
+negloglik <- function(lambda) n * log(lambda) + sum(claims) / lambda
+```
+
+```{webr}
+#| exercise: curvature
+fit <- optim(par = 1, fn = negloglik, method = "Brent",
+             lower = 0.01, upper = 50, hessian = TRUE)
+H  <- fit$hessian[1, 1]
+se <- ______
+
+c(se_from_curvature = se, theory = fit$par / sqrt(n))
+```
+
+```{webr}
+#| exercise: curvature
+#| check: true
+target <- with(.envir_result, fit$par / sqrt(n))
+if (is.numeric(.result) && length(.result) == 2 && abs(.result[[1]] - target) / target < 0.01) {
+  list(correct = TRUE, message = "They agree. This is how R reports standard errors for almost every model fitted by maximum likelihood, including glm().")
+} else {
+  list(correct = FALSE, message = "The standard error is one over the square root of the curvature.")
+}
+```
+
+::: {.hint exercise="curvature"}
+`1 / sqrt(H)`
+:::
+
+::: {.solution exercise="curvature"}
+```r
+fit <- optim(par = 1, fn = negloglik, method = "Brent",
+             lower = 0.01, upper = 50, hessian = TRUE)
+H  <- fit$hessian[1, 1]
+se <- 1 / sqrt(H)
+c(se_from_curvature = se, theory = fit$par / sqrt(n))
+```
+
+With several parameters the Hessian is a matrix and the standard errors are `sqrt(diag(solve(H)))`. You'll need that next.
+:::
+
+## Exercise 4: the Challenger model by hand
+
+The 23 flights are loaded as `temp` (°C) and `damage` (O-rings damaged, out of 6). Write the negative log-likelihood of the logistic model, maximise it with `optim()`, and compare with `glm()`. `plogis()` is R's logistic function, $1/(1 + e^{-z})$.
+
+```{webr}
+#| setup: true
+#| exercise: challenger
+tempF  <- c(53, 57, 58, 63, 66, 67, 67, 67, 68, 69, 70, 70, 70, 70, 72, 73, 75, 75, 76, 76, 78, 79, 81)
+damage <- c(5, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+temp <- round((tempF - 32) * 5 / 9, 1)
+```
+
+```{webr}
+#| exercise: challenger
+negloglik <- function(beta) {
+  p <- plogis(beta[1] + beta[2] * temp)
+  -sum(dbinom(damage, size = 6, prob = ______, log = TRUE))
+}
+
+fit <- optim(c(0, 0), negloglik, method = "BFGS", hessian = TRUE)
+by_hand <- fit$par
+by_glm  <- coef(glm(cbind(damage, 6 - damage) ~ temp, family = binomial))
+rbind(by_hand, by_glm)
+```
+
+```{webr}
+#| exercise: challenger
+#| check: true
+target <- with(.envir_result, coef(glm(cbind(damage, 6 - damage) ~ temp, family = binomial)))
+if (is.matrix(.result) && nrow(.result) == 2 && max(abs(.result[1, ] - target)) < 0.01) {
+  list(correct = TRUE, message = sprintf("Same answer as glm(): β₀ ≈ %.2f, β₁ ≈ %.3f. Each degree colder raises the log-odds of O-ring failure by about %.2f.", target[1], target[2], -target[2]))
+} else {
+  list(correct = FALSE, message = "Not yet. Each flight's probability of failure is the p you computed on the line above.")
+}
+```
+
+::: {.hint exercise="challenger"}
+You already computed the per-flight probabilities and called them `p`.
+:::
+
+::: {.solution exercise="challenger"}
+```r
+negloglik <- function(beta) {
+  p <- plogis(beta[1] + beta[2] * temp)
+  -sum(dbinom(damage, size = 6, prob = p, log = TRUE))
+}
+fit <- optim(c(0, 0), negloglik, method = "BFGS", hessian = TRUE)
+by_hand <- fit$par
+by_glm  <- coef(glm(cbind(damage, 6 - damage) ~ temp, family = binomial))
+rbind(by_hand, by_glm)
+```
+:::
+
+Now the standard errors, from the curvature, next to `glm()`'s. Run it:
+
+```{webr}
+tempF  <- c(53, 57, 58, 63, 66, 67, 67, 67, 68, 69, 70, 70, 70, 70, 72, 73, 75, 75, 76, 76, 78, 79, 81)
+damage <- c(5, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+temp <- round((tempF - 32) * 5 / 9, 1)
+negloglik <- function(beta) -sum(dbinom(damage, 6, plogis(beta[1] + beta[2] * temp), log = TRUE))
+fit <- optim(c(0, 0), negloglik, method = "BFGS", hessian = TRUE)
+
+se_by_hand <- sqrt(diag(solve(fit$hessian)))
+g <- glm(cbind(damage, 6 - damage) ~ temp, family = binomial)
+rbind(se_by_hand, se_glm = summary(g)$coefficients[, "Std. Error"])
+
+# The correlation between the two estimates: the 'ridge' you saw in the lesson
+cov2cor(solve(fit$hessian))
+```
+
+::: {.column-margin}
+[−0.98: that's the long diagonal ridge on the likelihood map]{.scribble .blue}
+:::
+
+## Exercise 5: OLS is maximum likelihood
+
+Fit a regression by maximum likelihood with normal errors and compare with `lm()`. We estimate $\log\sigma$ rather than $\sigma$ so the optimiser can't wander into negative variances.
+
+```{webr}
+#| setup: true
+#| exercise: olsmle
+set.seed(2)
+x <- runif(80, 0, 10)
+y <- 2 + 0.5 * x + rnorm(80, 0, 1.5)
+```
+
+```{webr}
+#| exercise: olsmle
+negloglik <- function(theta) {
+  b0 <- theta[1]; b1 <- theta[2]; sigma <- exp(theta[3])
+  -sum(dnorm(y, mean = ______, sd = sigma, log = TRUE))
+}
+
+fit <- optim(c(0, 0, 0), negloglik, method = "BFGS")
+rbind(mle = fit$par[1:2], ols = coef(lm(y ~ x)))
+```
+
+```{webr}
+#| exercise: olsmle
+#| check: true
+target <- with(.envir_result, coef(lm(y ~ x)))
+if (is.matrix(.result) && nrow(.result) == 2 && max(abs(.result[1, ] - target)) < 1e-3) {
+  list(correct = TRUE, message = "Identical coefficients. Maximising the normal likelihood is minimising the sum of squares.")
+} else {
+  list(correct = FALSE, message = "The mean of each y is the regression line: b0 + b1 * x.")
+}
+```
+
+::: {.hint exercise="olsmle"}
+Under the model, $y_i \sim N(\beta_0 + \beta_1 x_i, \sigma^2)$. So the mean is `b0 + b1 * x`.
+:::
+
+::: {.solution exercise="olsmle"}
+```r
+negloglik <- function(theta) {
+  b0 <- theta[1]; b1 <- theta[2]; sigma <- exp(theta[3])
+  -sum(dnorm(y, mean = b0 + b1 * x, sd = sigma, log = TRUE))
+}
+fit <- optim(c(0, 0, 0), negloglik, method = "BFGS")
+rbind(mle = fit$par[1:2], ols = coef(lm(y ~ x)))
+```
+:::
+
+The coefficients match, but the variance estimates differ slightly. Run this to see why:
+
+```{webr}
+set.seed(2)
+x <- runif(80, 0, 10)
+y <- 2 + 0.5 * x + rnorm(80, 0, 1.5)
+fit_lm <- lm(y ~ x)
+RSS <- sum(residuals(fit_lm)^2); n <- length(y); p <- 2
+
+c(mle_sigma2 = RSS / n,          # what maximum likelihood gives
+  ols_sigma2 = RSS / (n - p))    # what summary(lm) uses (unbiased)
+```
+
+The MLE divides by $n$ and is slightly biased downward in small samples; `lm()` divides by $n - p$. With 80 observations the difference is small; with 10 it wouldn't be.
+
+## Free play
+
+Some ideas: refit the Challenger model with a probit link (`pnorm` instead of `plogis`) and compare predictions at −0.6 °C; or simulate exponential data with $n = 5$ and see how far $\hat\lambda/\sqrt n$ is from the true spread.
+
+```{webr}
+tempF  <- c(53, 57, 58, 63, 66, 67, 67, 67, 68, 69, 70, 70, 70, 70, 72, 73, 75, 75, 76, 76, 78, 79, 81)
+damage <- c(5, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+temp <- round((tempF - 32) * 5 / 9, 1)
+
+logit  <- glm(cbind(damage, 6 - damage) ~ temp, family = binomial(link = "logit"))
+probit <- glm(cbind(damage, 6 - damage) ~ temp, family = binomial(link = "probit"))
+predict(logit,  data.frame(temp = -0.6), type = "response")
+predict(probit, data.frame(temp = -0.6), type = "response")
+```
+
+**Next lesson:** [The bootstrap](../lessons/03-bootstrap.qmd).

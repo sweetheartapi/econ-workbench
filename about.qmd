@@ -1,0 +1,28 @@
+---
+title: "How to use this site"
+---
+
+## What runs where
+
+Everything runs in your browser. The apps use [Shinylive](https://shiny.posit.co/py/docs/shinylive.html) and the lab exercises use [webR](https://docs.r-wasm.org/webr/latest/) through [quarto-live](https://r-wasm.github.io/quarto-live/). Both are R compiled to WebAssembly, so there is no server, no account, and nothing to install.
+
+- **The first app or code cell on a page takes a few seconds to start** while R downloads (around 20–30 MB, cached afterwards). Later ones are quick.
+- Use a recent Chrome, Edge, Firefox or Safari. A laptop works best; the apps are usable but cramped on a phone.
+- Nothing you type is saved. Reloading a page resets it. Copy anything you want to keep into your own R session.
+
+## Tips for self-study
+
+- **Predict before you click.** Before moving a slider, say what you think will happen. Being surprised is where the learning happens.
+- **Do the "Try this" lists.** They're chosen to reveal the one idea each app exists for.
+- **Attempt each exercise before opening the hint,** and the hint before the solution.
+- **Take the code home.** Every lab snippet runs unchanged in RStudio or Positron.
+
+## Sources
+
+The topics, examples and structure follow the lecture notes *Regression basics*, *Maximum likelihood* and *The bootstrap* by Lukáš Lafférs (Matej Bel University, Department of Mathematics). The explanations, apps and exercises here were written to accompany them. Recommended further reading from those notes:
+
+- Faraway, J. (2016). *Extending the Linear Model with R*, and *Linear Models with R*.
+- Hansen, B. *Probability and Statistics for Economists* and *Econometrics* (free online).
+- Angrist, J. and Pischke, J.-S. (2008). *Mostly Harmless Econometrics*.
+- Efron, B. and Tibshirani, R. *An Introduction to the Bootstrap*.
+- Greenland, S. et al. (2016). Statistical tests, P values, confidence intervals, and power: a guide to misinterpretations. *European Journal of Epidemiology* 31(4).

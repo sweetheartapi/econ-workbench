@@ -1,0 +1,392 @@
+---
+title: "Regression lab"
+subtitle: "Open up lm() and see what's inside"
+---
+
+{{< include ../_extensions/r-wasm/live/_knitr.qmd >}}
+
+Everything on this page runs real R in your browser. Nothing to install, and you can't break anything: reload the page to start fresh.
+
+::: {.callout-note appearance="simple"}
+**How the code boxes work.** Edit the code, then press **Run Code** (or Ctrl/Cmd + Enter). In exercises, replace each `______` with your answer and press **Submit Answer** to have it checked. Stuck? Use the **Hint** button first, and the **Solution** button only after a real attempt.
+:::
+
+## Warm-up: meet the data
+
+A small made-up dataset of 50 workers: hourly wage, years of education and years of experience. Run the cell to look at it.
+
+```{webr}
+set.seed(1)
+n <- 50
+educ  <- round(runif(n, 8, 20))
+exper <- round(runif(n, 0, 30))
+wage  <- exp(1 + 0.08 * educ + 0.02 * exper + rnorm(n, 0, 0.3))
+d <- data.frame(wage, educ, exper)
+
+head(d)
+summary(lm(log(wage) ~ educ + exper, data = d))
+```
+
+::: {.column-margin}
+[we built the data with β_educ = 0.08, so we know the truth]{.scribble}
+:::
+
+Find the coefficient on `educ` in the output. It should be near 0.08: each extra year of education is associated with roughly 8% higher wages, holding experience fixed. Now let's rebuild that number from scratch.
+
+## Exercise 1: OLS by the formula
+
+The lesson gave you $\hat\beta = (X^\top X)^{-1} X^\top y$. In R, `t(X)` is the transpose, `%*%` is matrix multiplication, and `solve(A)` is the inverse of `A`. The matrix `X` and vector `y` are already built for you.
+
+```{webr}
+#| setup: true
+#| exercise: ols_formula
+set.seed(1)
+n <- 50
+educ  <- round(runif(n, 8, 20))
+exper <- round(runif(n, 0, 30))
+wage  <- exp(1 + 0.08 * educ + 0.02 * exper + rnorm(n, 0, 0.3))
+d <- data.frame(wage, educ, exper)
+```
+
+```{webr}
+#| exercise: ols_formula
+X <- cbind(1, d$educ, d$exper)   # a column of 1s, then the regressors
+y <- log(d$wage)
+
+beta_hat <- ______
+beta_hat
+```
+
+```{webr}
+#| exercise: ols_formula
+#| check: true
+target <- with(.envir_result, unname(coef(lm(log(wage) ~ educ + exper, data = d))))
+if (is.numeric(.result) && length(.result) == 3 &&
+    isTRUE(all.equal(as.numeric(.result), target, tolerance = 1e-6))) {
+  list(correct = TRUE, message = "Exactly what lm() gets. That one line is the heart of lm().")
+} else {
+  list(correct = FALSE, message = "Not quite. You should get 3 numbers that match coef(lm(log(wage) ~ educ + exper, data = d)).")
+}
+```
+
+::: {.hint exercise="ols_formula"}
+Read the formula from left to right: the inverse of `t(X) %*% X`, times `t(X)`, times `y`. Each piece needs `%*%` between it and the next.
+:::
+
+::: {.solution exercise="ols_formula"}
+```r
+X <- cbind(1, d$educ, d$exper)
+y <- log(d$wage)
+
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+beta_hat
+```
+
+In practice `solve(t(X) %*% X, t(X) %*% y)` is faster and numerically safer, because it avoids computing an inverse explicitly.
+:::
+
+## Exercise 2: the right angle
+
+The lesson claimed residuals are always at a right angle to every regressor, so $X^\top \hat\varepsilon = 0$. Compute the residuals and check the claim.
+
+```{webr}
+#| setup: true
+#| exercise: orthogonal
+set.seed(1)
+n <- 50
+educ  <- round(runif(n, 8, 20))
+exper <- round(runif(n, 0, 30))
+wage  <- exp(1 + 0.08 * educ + 0.02 * exper + rnorm(n, 0, 0.3))
+d <- data.frame(wage, educ, exper)
+X <- cbind(1, d$educ, d$exper)
+y <- log(d$wage)
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+```
+
+```{webr}
+#| exercise: orthogonal
+y_hat <- X %*% beta_hat      # fitted values
+e     <- ______              # residuals: actual minus fitted
+
+t(X) %*% e                   # should be (numerically) zero
+```
+
+```{webr}
+#| exercise: orthogonal
+#| check: true
+if (is.numeric(.result) && length(.result) == 3 && all(abs(.result) < 1e-8)) {
+  list(correct = TRUE, message = "All three are zero up to rounding error (numbers like 1e-13). The residuals are orthogonal to every column of X, including the column of 1s, which is why residuals always sum to zero when there's an intercept.")
+} else {
+  list(correct = FALSE, message = "The result should be three numbers that are essentially zero. Check how you defined the residuals.")
+}
+```
+
+::: {.hint exercise="orthogonal"}
+A residual is the gap between what happened and what the line predicts: `y` minus `y_hat`.
+:::
+
+::: {.solution exercise="orthogonal"}
+```r
+y_hat <- X %*% beta_hat
+e     <- y - y_hat
+t(X) %*% e
+```
+:::
+
+## Exercise 3: R² by hand
+
+$R^2 = 1 - \text{RSS}/\text{TSS}$. Compute it and compare with what `summary()` reports.
+
+```{webr}
+#| setup: true
+#| exercise: rsq
+set.seed(1)
+n <- 50
+educ  <- round(runif(n, 8, 20))
+exper <- round(runif(n, 0, 30))
+wage  <- exp(1 + 0.08 * educ + 0.02 * exper + rnorm(n, 0, 0.3))
+d <- data.frame(wage, educ, exper)
+fit <- lm(log(wage) ~ educ + exper, data = d)
+y <- log(d$wage)
+```
+
+```{webr}
+#| exercise: rsq
+e   <- residuals(fit)
+RSS <- sum(e^2)
+TSS <- ______          # total variation of y around its mean
+
+1 - RSS / TSS
+```
+
+```{webr}
+#| exercise: rsq
+#| check: true
+target <- with(.envir_result, summary(fit)$r.squared)
+if (is.numeric(.result) && length(.result) == 1 && abs(.result - target) < 1e-8) {
+  list(correct = TRUE, message = sprintf("R² = %.3f, matching summary(fit). About %.0f%% of the variation in log wages is accounted for by education and experience.", target, 100 * target))
+} else {
+  list(correct = FALSE, message = "Not yet. TSS is the sum of squared deviations of y from its mean.")
+}
+```
+
+::: {.hint exercise="rsq"}
+`sum((y - mean(y))^2)`
+:::
+
+::: {.solution exercise="rsq"}
+```r
+e   <- residuals(fit)
+RSS <- sum(e^2)
+TSS <- sum((y - mean(y))^2)
+1 - RSS / TSS
+```
+:::
+
+## Exercise 4: heteroskedasticity and robust standard errors
+
+The slides' example is $y_i = 1 + 3x_i + x_i\,\varepsilon_i$: the bigger $|x_i|$, the noisier $y_i$. The usual standard-error formula assumes the noise is the same everywhere, so here it's wrong. Run the cell to see the fan shape.
+
+```{webr}
+set.seed(3)
+x <- runif(200, -3, 3)
+y <- 1 + 3 * x + x * rnorm(200)
+plot(x, y, pch = 19, col = "#1B2559AA", main = "Noise grows with |x|")
+abline(lm(y ~ x), col = "#2463EB", lwd = 3)
+```
+
+The **heteroskedasticity-robust** (HC0, or "sandwich") variance estimate replaces $\hat\sigma^2 (X^\top X)^{-1}$ with
+
+$$
+\hat V = (X^\top X)^{-1}\Big(\sum_i X_i X_i^\top \hat\varepsilon_i^2\Big)(X^\top X)^{-1}.
+$$
+
+The two slices of bread are the same $(X^\top X)^{-1}$; the filling lets each observation bring its own error size. Fill in the filling.
+
+```{webr}
+#| setup: true
+#| exercise: sandwich
+set.seed(3)
+x <- runif(200, -3, 3)
+y <- 1 + 3 * x + x * rnorm(200)
+fit <- lm(y ~ x)
+X <- cbind(1, x)
+e <- residuals(fit)
+bread <- solve(t(X) %*% X)
+```
+
+```{webr}
+#| exercise: sandwich
+meat <- t(X) %*% diag(______) %*% X      # sum of X_i X_i' e_i^2
+V_robust <- bread %*% meat %*% bread
+
+c(classical = summary(fit)$coefficients["x", "Std. Error"],
+  robust    = sqrt(V_robust[2, 2]))
+```
+
+```{webr}
+#| exercise: sandwich
+#| check: true
+target <- with(.envir_result, {
+  u <- as.numeric(e)
+  sqrt((bread %*% (t(X * u^2) %*% X) %*% bread)[2, 2])
+})
+if (is.numeric(.result) && length(.result) == 2 && abs(.result[[2]] - target) < 1e-8) {
+  list(correct = TRUE, message = sprintf("The robust standard error (%.3f) is noticeably larger than the classical one (%.3f). The classical formula was overconfident.", .result[[2]], .result[[1]]))
+} else {
+  list(correct = FALSE, message = "The filling needs each observation's squared residual on the diagonal.")
+}
+```
+
+::: {.hint exercise="sandwich"}
+`diag(v)` puts the vector `v` on the diagonal of a matrix. You want the squared residuals there: `e^2`.
+:::
+
+::: {.solution exercise="sandwich"}
+```r
+meat <- t(X) %*% diag(e^2) %*% X
+V_robust <- bread %*% meat %*% bread
+c(classical = summary(fit)$coefficients["x", "Std. Error"],
+  robust    = sqrt(V_robust[2, 2]))
+```
+
+In real work you'd use `sandwich::vcovHC(fit, type = "HC0")` (or HC1–HC3, which make small-sample corrections), together with `lmtest::coeftest()`.
+:::
+
+### Does it matter? Check by simulation
+
+A standard error is "right" if the 95% interval built from it covers the truth 95% of the time. Run this to compare the two methods over 1,000 simulated datasets. It takes a few seconds.
+
+```{webr}
+set.seed(10)
+covers <- replicate(1000, {
+  x <- runif(100, -3, 3)
+  y <- 1 + 3 * x + x * rnorm(100)
+  fit <- lm(y ~ x); X <- cbind(1, x); e <- residuals(fit)
+  b <- coef(fit)[["x"]]
+  se_classic <- summary(fit)$coefficients["x", "Std. Error"]
+  bread <- solve(crossprod(X))
+  se_robust <- sqrt((bread %*% crossprod(X * e) %*% bread)[2, 2])
+  tq <- qt(0.975, 98)
+  c(classic = abs(b - 3) < tq * se_classic, robust = abs(b - 3) < tq * se_robust)
+})
+rowMeans(covers)   # share of intervals that contain the true slope 3
+```
+
+::: {.column-margin}
+[aim: 0.95]{.scribble}
+:::
+
+The classical intervals cover the truth noticeably less than 95% of the time: they claim more certainty than the data justify. The robust ones come close to 95%.
+
+## Exercise 5: collinearity inflates variance
+
+When two regressors move together, the regression struggles to separate their effects, and standard errors blow up. The lesson's formula is
+
+$$
+\text{var}(\hat\beta_j) = \sigma^2\,\frac{1}{1 - R_j^2}\,\frac{1}{\sum_i (x_{ij} - \bar x_j)^2},
+$$
+
+where $R_j^2$ comes from regressing $x_j$ on the other regressors. The factor $1/(1-R_j^2)$ is the **variance inflation factor** (VIF). Compute it for `x1`.
+
+```{webr}
+#| setup: true
+#| exercise: vif
+set.seed(5)
+x2 <- rnorm(100)
+x1 <- 0.95 * x2 + sqrt(1 - 0.95^2) * rnorm(100)   # correlation about 0.95
+y  <- 1 + 2 * x1 + 2 * x2 + rnorm(100)
+```
+
+```{webr}
+#| exercise: vif
+R2_1 <- summary(lm(x1 ~ x2))$r.squared
+VIF  <- ______
+VIF
+```
+
+```{webr}
+#| exercise: vif
+#| check: true
+target <- with(.envir_result, 1 / (1 - summary(lm(x1 ~ x2))$r.squared))
+if (is.numeric(.result) && length(.result) == 1 && abs(.result - target) < 1e-8) {
+  list(correct = TRUE, message = sprintf("VIF = %.1f: the variance of the x1 coefficient is about %.0f times what it would be with uncorrelated regressors, so its standard error is about %.1f times larger.", target, target, sqrt(target)))
+} else {
+  list(correct = FALSE, message = "VIF is 1 divided by (1 minus R²).")
+}
+```
+
+::: {.hint exercise="vif"}
+`1 / (1 - R2_1)`
+:::
+
+::: {.solution exercise="vif"}
+```r
+R2_1 <- summary(lm(x1 ~ x2))$r.squared
+VIF  <- 1 / (1 - R2_1)
+VIF
+```
+
+A common rule of thumb flags VIFs above 10. Collinearity doesn't bias the estimates; it makes them imprecise. Often the honest conclusion is "the data can't separate these two effects".
+:::
+
+## Exercise 6: a t-test is a regression
+
+Two groups, A and B. A classic two-sample t-test (with equal variances) asks whether their means differ. The lesson claimed a regression on a group dummy is *the same test*. Complete the t-test call so it assumes equal variances, and compare its t statistic with the regression's.
+
+```{webr}
+#| setup: true
+#| exercise: ttest
+set.seed(8)
+group <- factor(rep(c("A", "B"), each = 30))
+y <- c(rnorm(30, 10, 2), rnorm(30, 11, 2))
+```
+
+```{webr}
+#| exercise: ttest
+reg <- summary(lm(y ~ group))$coefficients
+tt  <- t.test(y ~ group, var.equal = ______)
+
+c(regression_t = reg["groupB", "t value"], t_test_t = unname(tt$statistic))
+```
+
+```{webr}
+#| exercise: ttest
+#| check: true
+if (is.numeric(.result) && length(.result) == 2 && isTRUE(all.equal(abs(.result[[1]]), abs(.result[[2]])))) {
+  list(correct = TRUE, message = "Same number (up to the sign, which just depends on which group is subtracted from which). A dummy-variable regression and the equal-variance t-test make identical assumptions.")
+} else {
+  list(correct = FALSE, message = "The two t statistics should match in size. Did you tell t.test() to assume equal variances?")
+}
+```
+
+::: {.hint exercise="ttest"}
+The argument takes a logical value: `TRUE` or `FALSE`.
+:::
+
+::: {.solution exercise="ttest"}
+```r
+reg <- summary(lm(y ~ group))$coefficients
+tt  <- t.test(y ~ group, var.equal = TRUE)
+c(regression_t = reg["groupB", "t value"], t_test_t = unname(tt$statistic))
+```
+:::
+
+## Free play
+
+A scratchpad with the wage data loaded. Some ideas: add an interaction `educ:exper`; compare `wage` with `log(wage)` as the outcome and interpret the coefficient each way; plot `residuals(fit)` against `fitted(fit)` and look for patterns.
+
+```{webr}
+set.seed(1)
+n <- 50
+educ  <- round(runif(n, 8, 20))
+exper <- round(runif(n, 0, 30))
+wage  <- exp(1 + 0.08 * educ + 0.02 * exper + rnorm(n, 0, 0.3))
+d <- data.frame(wage, educ, exper)
+
+fit <- lm(log(wage) ~ educ + exper, data = d)
+plot(fitted(fit), residuals(fit), pch = 19, col = "#1B2559AA")
+abline(h = 0, lty = 2)
+```
+
+**Next lesson:** [Maximum likelihood](../lessons/02-likelihood.qmd).

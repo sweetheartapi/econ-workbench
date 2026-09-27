@@ -1,0 +1,344 @@
+---
+title: "The bootstrap"
+subtitle: "Measuring uncertainty when there's no formula to lean on"
+---
+
+You roll a die 25 times. The average is easy to report, and the regression lesson told you how to get a standard error for it. But what about the **median**? Or the 90th percentile? Or some estimate that comes out of a numerical optimisation? Often there is no handy formula for the standard error, or the formula needs things you don't know.
+
+The bootstrap gets around this with a trick so simple it sounds like cheating.
+
+## The idea: your sample stands in for the population
+
+To see how an estimate varies from sample to sample, you'd ideally draw many fresh samples from the population $F$. You can't: you only have one sample. But that sample is your best picture of the population. So <span class="key">treat the sample as if it were the population, and draw new samples from it.</span>
+
+::: {.column-margin}
+[with replacement! otherwise you'd just get the same data back]{.scribble}
+:::
+
+Each "bootstrap sample" has the same size $n$ as your data and is drawn **with replacement**: some observations get picked twice or three times, others not at all. Compute your estimate on each one, and the spread of those estimates approximates the spread you'd see across real samples.
+
+::: {.bootstrap-worlds}
+| Real world | Bootstrap world |
+|---|---|
+| Population $F$ (unknown) | Your data $\hat F_n$ (known) |
+| draw a sample $y_1, \dots, y_n$ | draw a resample $y^*_1, \dots, y^*_n$ with replacement |
+| compute $\hat\theta$ | compute $\hat\theta^*$ |
+| we get **one** $\hat\theta$ | we get **as many** $\hat\theta^*$ as we like |
+:::
+
+The bet is that the relationship between $\hat\theta^*$ and $\hat\theta$ mimics the relationship between $\hat\theta$ and the truth $\theta$.
+
+## The bootstrap machine
+
+Pick a dataset and a statistic, then resample. The top panel shows your data as a row of tickets: in each resample, filled tickets were drawn and the number above them says how many times. The bottom panel collects every $\hat\theta^*$ you've produced.
+
+::: {.bench .column-page-right}
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 640
+library(shiny)
+library(bslib)
+
+ink <- "#1B2559"; red <- "#D6334A"; blue <- "#2463EB"; grey <- "#9AA3B5"; green <- "#1F8A5B"
+base_par <- function() {
+  par(mar = c(4, 4.4, 1.2, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.85)
+}
+
+set.seed(2024)
+datasets <- list(
+  "25 dice throws (from the slides)" = c(rep(1, 2), rep(2, 1), rep(3, 8), rep(4, 7), rep(5, 3), rep(6, 4)),
+  "30 claim waiting times, days (skewed)" = round(rexp(30, 1 / 5), 1),
+  "40 monthly incomes, EUR (heavy right tail)" = round(rlnorm(40, log(1200), 0.7))
+)
+stats <- list("mean" = mean, "median" = median, "standard deviation" = sd)
+
+ui <- page_sidebar(
+  sidebar = sidebar(
+    width = 270,
+    selectInput("data", "Data", names(datasets)),
+    radioButtons("stat", "Statistic θ", names(stats), inline = TRUE),
+    actionButton("one", "Resample once", class = "btn-primary"),
+    actionButton("hundred", "Resample 100 times"),
+    actionButton("thousand", "Resample 1,000 times"),
+    actionButton("reset", "Start over", class = "btn-link"),
+    uiOutput("summary")
+  ),
+  card(card_header("Your data as tickets, and the latest bootstrap sample"),
+       plotOutput("tickets", height = "210px")),
+  card(card_header("The bootstrap distribution of θ̂*"),
+       plotOutput("boot", height = "260px"))
+)
+
+server <- function(input, output, session) {
+  x <- reactive(datasets[[input$data]])
+  f <- reactive(stats[[input$stat]])
+  boots <- reactiveVal(numeric())
+  last_idx <- reactiveVal(NULL)
+
+  resample <- function(B) {
+    n <- length(x())
+    idx <- replicate(B, sample.int(n, n, replace = TRUE), simplify = FALSE)
+    last_idx(idx[[B]])
+    boots(c(boots(), vapply(idx, function(i) f()(x()[i]), numeric(1))))
+  }
+  observeEvent(input$one, resample(1))
+  observeEvent(input$hundred, resample(100))
+  observeEvent(input$thousand, resample(1000))
+  observeEvent(list(input$reset, input$data, input$stat), {
+    boots(numeric()); last_idx(NULL)
+  }, ignoreInit = TRUE)
+
+  output$tickets <- renderPlot({
+    v <- x(); n <- length(v)
+    counts <- if (is.null(last_idx())) rep(0, n) else tabulate(last_idx(), n)
+    base_par()
+    par(mar = c(2.5, 4.4, 1.5, 1))
+    plot(seq_len(n), v, type = "n", xlab = "", ylab = "value",
+         ylim = range(v) + c(-0.08, 0.2) * diff(range(v)), xaxt = "n")
+    mtext("observation number", side = 1, line = 0.8, col = ink, cex = 0.85)
+    points(seq_len(n), v, pch = 21, cex = 1.3 + 0.5 * pmin(counts, 4),
+           bg = ifelse(counts > 0,
+                       vapply(0.35 + 0.15 * pmin(counts, 4), function(a) adjustcolor(red, a), ""),
+                       "white"),
+           col = ifelse(counts > 0, red, grey), lwd = 1.5)
+    if (any(counts > 1)) {
+      text(which(counts > 1), v[counts > 1], paste0("×", counts[counts > 1]),
+           pos = 3, offset = 0.9, col = red, cex = 0.85, font = 2)
+    }
+    if (!is.null(last_idx())) {
+      mtext(sprintf("never drawn this time: %d of %d observations", sum(counts == 0), n),
+            side = 3, adj = 1, col = grey, cex = 0.8, line = 0.1)
+    }
+  })
+
+  output$boot <- renderPlot({
+    b <- boots(); th <- f()(x())
+    base_par()
+    if (length(b) == 0) {
+      plot.new()
+      text(0.5, 0.5, "Resample to start filling this in", col = grey, cex = 1.1)
+      return(invisible())
+    }
+    rng <- range(c(b, th)); pad <- 0.05 * max(diff(rng), 1e-6)
+    h <- hist(b, breaks = seq(rng[1] - pad, rng[2] + pad, length.out = 36), plot = FALSE)
+    plot(h, col = adjustcolor(red, 0.35), border = "white", main = "",
+         xlab = paste0("θ̂* (", input$stat, " of each bootstrap sample)"), ylab = "count")
+    abline(v = th, col = blue, lwd = 3)
+    mtext("θ̂ from your data", side = 3, at = th, col = blue, cex = 0.85, line = 0.1)
+    if (length(b) >= 100) {
+      q <- quantile(b, c(0.025, 0.975))
+      abline(v = q, col = green, lwd = 2.5, lty = 2)
+    }
+  })
+
+  output$summary <- renderUI({
+    b <- boots(); v <- x(); th <- f()(v)
+    items <- list(tags$p(style = "margin:.2rem 0;", sprintf("θ̂ from your data: %.3f", th)),
+                  tags$p(style = "margin:.2rem 0;", sprintf("Bootstrap draws so far: B = %d", length(b))))
+    if (length(b) >= 2) {
+      items <- c(items, list(tags$p(style = "margin:.2rem 0;", "Bootstrap standard error: ",
+                                    tags$strong(sprintf("%.3f", sd(b))))))
+    }
+    if (length(b) >= 100) {
+      q <- quantile(b, c(0.025, 0.975))
+      items <- c(items, list(tags$p(style = paste0("margin:.2rem 0;color:", green), "95% percentile interval: ",
+                                    tags$strong(sprintf("[%.3f, %.3f]", q[1], q[2])))))
+      if (input$stat == "mean") {
+        tq <- qt(0.975, length(v) - 1) * sd(v) / sqrt(length(v))
+        items <- c(items, list(tags$p(style = "margin:.2rem 0;color:#4A5578;",
+                                      sprintf("Textbook t-interval: [%.3f, %.3f]", mean(v) - tq, mean(v) + tq))))
+      }
+    } else if (length(b) > 0) {
+      items <- c(items, list(tags$p(style = "margin:.2rem 0;color:#4A5578;",
+                                    "The 95% interval appears after 100 draws.")))
+    }
+    tags$div(style = "font-size:.9rem;margin-top:.8rem;", items)
+  })
+}
+
+shinyApp(ui, server)
+```
+:::
+
+::: {.try-this}
+**Try this**
+
+1. Press *Resample once* several times with the dice data. About a third of the tickets are never drawn each time; on average $(1 - 1/n)^n \approx 37\%$ are left out. That's how a resample differs from the original.
+2. Resample 1,000 times with the **mean**. The green 95% interval lands very close to the textbook t-interval. When the textbook formula works, the bootstrap agrees with it.
+3. Switch to the **median** of the dice. The bootstrap distribution is lumpy, piling up on a few values, because the median of whole numbers can only take a few values. No neat formula here, but the bootstrap still gives you a standard error.
+4. Try the incomes with the **standard deviation**. The distribution is skewed: one or two very large incomes dominate whenever they're drawn several times. A symmetric "estimate ± 2 SE" interval would hide that.
+:::
+
+### The algorithm, step by step
+
+1. From your data $X_1, \dots, X_n$, draw $n$ observations **with replacement**. In R: `sample(x, replace = TRUE)`.
+2. Compute the statistic on this resample to get $\hat\theta^*_b$.
+3. Repeat steps 1 and 2 many times, $b = 1, \dots, B$ (say $B = 2000$).
+4. Use the collection $\hat\theta^*_1, \dots, \hat\theta^*_B$:
+   - its standard deviation is the **bootstrap standard error**;
+   - its 2.5% and 97.5% quantiles give a **95% percentile interval**;
+   - its mean minus $\hat\theta$ estimates the **bias** of your estimator.
+
+::: {.decoder}
+[Formula decoder]{.decoder-title}
+
+| Symbol | In words |
+|---|---|
+| $F$ | the true population distribution; unknown |
+| $\hat F_n$ | the empirical distribution: put probability $1/n$ on each data point |
+| $\hat\theta$ | your estimate from the real data |
+| $\hat\theta^*_b$ | the same estimate computed on bootstrap sample number $b$ |
+| $B$ | number of bootstrap samples; more $B$ only removes simulation noise, it doesn't add information |
+:::
+
+::: {.column-margin}
+[B → ∞ makes the bootstrap *exact about your data*, not about the world]{.scribble .blue}
+:::
+
+### When is the bootstrap worth it?
+
+The slides list four situations:
+
+- **Small samples**, where asymptotic approximations are unreliable (say $n = 15$ in a regression).
+- **Complex estimators** where nobody has derived the asymptotic distribution, for example the output of a numerical optimisation.
+- **The formula depends on unknowns.** The sample median is approximately $N\big(m, \tfrac{1}{4nf(m)^2}\big)$, which needs the density $f$ at the median, which you don't know.
+- **Doubtful assumptions**, such as normality for stock returns that have fat tails.
+
+## Choosing between estimators
+
+Suppose you have two estimators and can only use one. One is **unbiased but noisy**: right on average, but any single estimate can land far away. The other is **slightly biased but steady**: always a bit off, but never by much. Which bag would you pick from, knowing you only get to draw once?
+
+A common answer is to pick whichever has the smaller **mean squared error**, $\text{MSE} = \text{bias}^2 + \text{variance}$. The bootstrap lets you estimate both pieces for estimators whose properties you can't work out on paper. You'll do exactly that in the lab.
+
+## When the bootstrap fails
+
+The bootstrap is general, not magic. Its classic failure is the **sample maximum**. Say the data are uniform between 0 and an unknown $\theta_0$, and you estimate $\theta_0$ by the largest observation. A bootstrap resample can never produce anything larger than the original maximum, and it contains that exact maximum with probability $1 - (1 - 1/n)^n \to 1 - e^{-1} \approx 63\%$. So 63% of the bootstrap estimates are *exactly* $\hat\theta$, while real samples essentially never hit the true value exactly.
+
+The fix in the slides is **subsampling**: draw *smaller* samples of size $m < n$ *without* replacement. Each subsample really is a sample from the true distribution, just a smaller one.
+
+::: {.bench .column-page-right}
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 520
+library(shiny)
+library(bslib)
+
+ink <- "#1B2559"; red <- "#D6334A"; blue <- "#2463EB"; grey <- "#9AA3B5"
+base_par <- function() {
+  par(mar = c(4, 4.4, 1.2, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.85)
+}
+theta0 <- 1
+B <- 2000
+
+ui <- page_sidebar(
+  sidebar = sidebar(
+    width = 270,
+    sliderInput("n", "Sample size n", min = 20, max = 400, value = 100, step = 10),
+    radioButtons("method", "Method",
+                 c("Bootstrap: n draws with replacement" = "boot",
+                   "Subsampling: m draws without replacement" = "sub")),
+    conditionalPanel("input.method == 'sub'",
+      sliderInput("m", "Subsample size m", min = 5, max = 200, value = 20, step = 5)),
+    actionButton("new", "Draw a new original sample"),
+    uiOutput("stats")
+  ),
+  card(card_header("Scaled error of the sample maximum: bootstrap world vs reality"),
+       plotOutput("hist", height = "400px"))
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$n, updateSliderInput(session, "m", max = input$n - 5,
+                                          value = min(input$m, input$n - 5)))
+  x <- reactive({ input$new; runif(input$n, 0, theta0) })
+
+  tstar <- reactive({
+    v <- x(); n <- length(v); th <- max(v)
+    if (input$method == "boot") {
+      replicate(B, n * (max(sample(v, n, replace = TRUE)) - th))
+    } else {
+      m <- min(input$m, n - 5)
+      replicate(B, m * (max(sample(v, m, replace = FALSE)) - th))
+    }
+  })
+
+  output$hist <- renderPlot({
+    t <- tstar(); p0 <- mean(t == 0)
+    neg <- t[t < 0]
+    base_par()
+    brks <- seq(-7, 0, by = 0.25)
+    neg <- neg[neg > -7]
+    h <- hist(neg, breaks = brks, plot = FALSE)
+    dens <- h$density * length(neg) / length(t)
+    plot(NA, xlim = c(-6, 1.6), ylim = c(0, 1.05),
+         xlab = "scaled error: n × (estimate − truth), or its resampling copy", ylab = "density")
+    rect(h$breaks[-length(h$breaks)], 0, h$breaks[-1], dens,
+         col = adjustcolor(red, 0.3), border = "white")
+    tt <- seq(-7, 0, length.out = 300)
+    lines(tt, exp(tt / theta0) / theta0, col = blue, lwd = 3)
+    segments(0, 0, 0, min(p0 * 1.6, 1.02), col = red, lwd = 8, lend = 1)
+    text(0.05, min(p0 * 1.6, 1.02), sprintf("%.0f%% of draws\nexactly zero", 100 * p0),
+         pos = 4, col = red, cex = 0.85, xpd = TRUE)
+    legend("topleft", bty = "n", cex = 0.85, text.col = ink,
+           fill = c(adjustcolor(red, 0.3), NA), border = c("white", NA),
+           lwd = c(NA, 3), col = c(NA, blue),
+           legend = c("resampling distribution", "true distribution (reality)"))
+  })
+
+  output$stats <- renderUI({
+    t <- tstar(); n <- input$n
+    theory <- if (input$method == "boot") 1 - (1 - 1 / n)^n else min(input$m, n - 5) / n
+    tags$div(style = "font-size:.9rem;margin-top:.8rem;",
+      tags$p(style = "margin:.2rem 0;", "Share of resamples with error exactly 0: ",
+             tags$strong(style = paste0("color:", red), sprintf("%.1f%%", 100 * mean(t == 0)))),
+      tags$p(style = "margin:.2rem 0;", sprintf("Theory for this method: %.1f%%", 100 * theory)),
+      tags$p(style = "margin:.2rem 0;", "In reality: ", tags$strong("0%")),
+      tags$p(style = "margin:.4rem 0;color:#4A5578;",
+             "The blue curve is the true distribution of n × (max − θ₀): exponential, and never exactly zero."))
+  })
+}
+
+shinyApp(ui, server)
+```
+:::
+
+::: {.try-this}
+**Try this**
+
+1. With the bootstrap, change $n$ from 20 to 400. The spike at zero stays at about 63%. More data doesn't cure it: the bootstrap is **inconsistent** here.
+2. Switch to subsampling with $m = 20$ and $n = 400$. The spike shrinks to about $m/n = 5\%$ and the histogram follows the blue curve.
+3. Now push $m$ up towards $n$. The spike grows back. Subsampling needs $m$ to be small relative to $n$, and choosing $m$ in practice is the method's weak spot.
+:::
+
+### Why it fails, in one sentence
+
+The bootstrap works when small changes in the data-generating distribution lead to small changes in the sampling distribution of your statistic. At the edge of the support (the maximum) or at the edge of the parameter space (say a mean restricted to be $\geq 0$ whose true value is 0, as in Andrews, 2000), that smoothness breaks down, and so does the bootstrap. Beran and Ducharme (1991) give the formal conditions if you want the full story.
+
+## Going further
+
+The slides also include an advanced example (marked with a star): testing whether a set of stamps was printed on one or two kinds of paper, by counting the modes of a density estimate. It uses a **smooth bootstrap**, which resamples from a smoothed version of the data rather than from the raw points. It's a good illustration that the bootstrap is a family of ideas, not one recipe: you choose *what* to resample from to match your question.
+
+For more, Efron and Tibshirani's *An Introduction to the Bootstrap* is the classic by the method's inventors, and the [bootstrap animations by Chris Wild](https://www.stat.auckland.ac.nz/~wild/BootAnim/) are a nice visual companion.
+
+## Check yourself
+
+::: {.callout-note collapse="true" icon="false"}
+## 1. Why must the resampling be with replacement?
+
+Drawing $n$ out of $n$ without replacement gives back exactly the original data every time, just shuffled, so every $\hat\theta^*$ would equal $\hat\theta$ and there'd be no variation to measure.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. You increase B from 1,000 to 100,000. Does your confidence interval get narrower?
+
+Essentially no. It gets *more precise as a description of your data*, since the simulation noise shrinks. The interval's width reflects the information in your $n$ observations, and only more data can shrink that.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Name a statistic for which the ordinary bootstrap is unreliable.
+
+The sample maximum (or minimum) when it estimates the edge of the distribution's support; also estimates whose true value sits on the boundary of the allowed parameter space.
+:::
+
+**Next:** the [bootstrap lab](../labs/03-bootstrap-lab.qmd), where you write the bootstrap loop yourself, bootstrap a regression slope, and compare two estimators by their mean squared error.

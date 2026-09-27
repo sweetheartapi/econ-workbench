@@ -1,0 +1,37 @@
+---
+pagetitle: "Econometrics Workbench"
+page-layout: full
+toc: false
+---
+
+::: {.hero}
+# See the estimator before you prove it.
+
+[every plot here runs real R, right in your browser]{.hero-note}
+
+<p class="lede">An interactive companion for econometrics self-study. Each topic starts with the intuition, lets you play with a live app, and only then shows the maths, with every symbol translated into words. Then you open a lab and write the R yourself.</p>
+:::
+
+## The route
+
+Work through these in order. Each lesson takes 45–90 minutes; each lab about the same.
+
+<ol class="route">
+<li><a href="lessons/01-regression.qmd">Regression basics</a><span class="route-desc">Least squares you can see, confidence intervals you can watch fail 5% of the time, and the omitted-variable trap. <a href="labs/01-regression-lab.qmd">Lab</a>: OLS by hand, robust standard errors, collinearity.</span></li>
+<li><a href="lessons/02-likelihood.qmd">Maximum likelihood</a><span class="route-desc">Climb a likelihood curve by hand, find the Challenger O-ring risk, and see why a sharp peak means a small standard error. <a href="labs/02-likelihood-lab.qmd">Lab</a>: write likelihoods and maximise them with optim().</span></li>
+<li><a href="lessons/03-bootstrap.qmd">The bootstrap</a><span class="route-desc">Resample your way to standard errors when there's no formula, and watch the bootstrap break where theory says it should. <a href="labs/03-bootstrap-lab.qmd">Lab</a>: bootstrap loops, regression slopes, choosing estimators.</span></li>
+</ol>
+
+## How each lesson is built
+
+**Intuition first.** A plain-language idea you could explain to a friend, before any symbols.
+
+**Play.** A live app where you move sliders and watch the statistics respond. Most apps are simulations, so you can see the truth that real data hide from you, and check whether an estimator actually finds it.
+
+**The maths, decoded.** The formula, followed by a table that translates every symbol into words. Short refreshers on logs, derivatives and matrices sit in fold-out boxes for when you need them.
+
+**Practice.** Labs with real R code that runs in the page. Exercises check your answer, give hints, and show a solution when you're stuck.
+
+::: {.callout-tip appearance="simple"}
+**If your maths feels rusty,** that's what this site is designed for. Wherever a proof would normally go, you'll find a simulation that shows the same result. Understanding *why* comes from watching it happen; the algebra is there when you're ready.
+:::

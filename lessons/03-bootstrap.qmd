@@ -1,6 +1,7 @@
 ---
 title: "The bootstrap"
 subtitle: "Measuring uncertainty when there's no formula to lean on"
+engine: knitr
 ---
 
 You roll a die 25 times. The average is easy to report, and the regression lesson told you how to get a standard error for it. But what about the **median**? Or the 90th percentile? Or some estimate that comes out of a numerical optimisation? Often there is no handy formula for the standard error, or the formula needs things you don't know.

@@ -1,6 +1,7 @@
 ---
 title: "Regression basics"
 subtitle: "Drawing the best line, and knowing how far to trust it"
+engine: knitr
 ---
 
 Regression is the workhorse of econometrics. You will use it for two very different jobs, and it helps to know which one you are doing before you start.

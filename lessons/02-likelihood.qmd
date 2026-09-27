@@ -1,6 +1,7 @@
 ---
 title: "Maximum likelihood"
 subtitle: "Which version of the world makes your data least surprising?"
+engine: knitr
 ---
 
 Someone tosses a coin 500 times and gets **97 heads**. Is the coin fair?

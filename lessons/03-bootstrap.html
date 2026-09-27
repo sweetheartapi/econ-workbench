@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>The bootstrap – Econometrics Workbench</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../labs/03-bootstrap-lab.html" rel="next">
+<link href="../labs/02-likelihood-lab.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-c3e7eccab66ddab53749d7447fc1e703.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-aeef5c6284bdb38755a4a5ee78839d5d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<meta name="shinylive:serviceworker_dir" content="..">
+<script src="../site_libs/quarto-contrib/shinylive-0.10.15/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="../site_libs/quarto-contrib/shinylive-0.10.15/shinylive/run-python-blocks.js" type="module"></script>
+<link href="../site_libs/quarto-contrib/shinylive-0.10.15/shinylive/shinylive.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css">
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar docked slimcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../lessons/03-bootstrap.html">3. The bootstrap</a></li><li class="breadcrumb-item"><a href="../lessons/03-bootstrap.html">Lesson</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Econometrics Workbench</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Start here</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">1. Regression basics</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../lessons/01-regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lesson</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../labs/01-regression-lab.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lab</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">2. Maximum likelihood</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../lessons/02-likelihood.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lesson</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../labs/02-likelihood-lab.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lab</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">3. The bootstrap</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../lessons/03-bootstrap.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Lesson</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../labs/03-bootstrap-lab.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lab</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../about.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">How to use this site</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul class="collapse">
+  <li><a href="#the-idea-your-sample-stands-in-for-the-population" id="toc-the-idea-your-sample-stands-in-for-the-population" class="nav-link active" data-scroll-target="#the-idea-your-sample-stands-in-for-the-population">The idea: your sample stands in for the population</a></li>
+  <li><a href="#the-bootstrap-machine" id="toc-the-bootstrap-machine" class="nav-link" data-scroll-target="#the-bootstrap-machine">The bootstrap machine</a></li>
+  <li><a href="#choosing-between-estimators" id="toc-choosing-between-estimators" class="nav-link" data-scroll-target="#choosing-between-estimators">Choosing between estimators</a></li>
+  <li><a href="#when-the-bootstrap-fails" id="toc-when-the-bootstrap-fails" class="nav-link" data-scroll-target="#when-the-bootstrap-fails">When the bootstrap fails</a></li>
+  <li><a href="#going-further" id="toc-going-further" class="nav-link" data-scroll-target="#going-further">Going further</a></li>
+  <li><a href="#check-yourself" id="toc-check-yourself" class="nav-link" data-scroll-target="#check-yourself">Check yourself</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../lessons/03-bootstrap.html">3. The bootstrap</a></li><li class="breadcrumb-item"><a href="../lessons/03-bootstrap.html">Lesson</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">The bootstrap</h1>
+<p class="subtitle lead">Measuring uncertainty when there’s no formula to lean on</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>You roll a die 25 times. The average is easy to report, and the regression lesson told you how to get a standard error for it. But what about the <strong>median</strong>? Or the 90th percentile? Or some estimate that comes out of a numerical optimisation? Often there is no handy formula for the standard error, or the formula needs things you don’t know.</p>
+<p>The bootstrap gets around this with a trick so simple it sounds like cheating.</p>
+<section id="the-idea-your-sample-stands-in-for-the-population" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-idea-your-sample-stands-in-for-the-population">The idea: your sample stands in for the population</h2>
+<p>To see how an estimate varies from sample to sample, you’d ideally draw many fresh samples from the population <span class="math inline">F</span>. You can’t: you only have one sample. But that sample is your best picture of the population. So <span class="key">treat the sample as if it were the population, and draw new samples from it.</span></p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p><span class="scribble">with replacement! otherwise you’d just get the same data back</span></p>
+</div></div><p>Each “bootstrap sample” has the same size <span class="math inline">n</span> as your data and is drawn <strong>with replacement</strong>: some observations get picked twice or three times, others not at all. Compute your estimate on each one, and the spread of those estimates approximates the spread you’d see across real samples.</p>
+<div class="bootstrap-worlds">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Real world</th>
+<th>Bootstrap world</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Population <span class="math inline">F</span> (unknown)</td>
+<td>Your data <span class="math inline">\hat F_n</span> (known)</td>
+</tr>
+<tr class="even">
+<td>draw a sample <span class="math inline">y_1, \dots, y_n</span></td>
+<td>draw a resample <span class="math inline">y^*_1, \dots, y^*_n</span> with replacement</td>
+</tr>
+<tr class="odd">
+<td>compute <span class="math inline">\hat\theta</span></td>
+<td>compute <span class="math inline">\hat\theta^*</span></td>
+</tr>
+<tr class="even">
+<td>we get <strong>one</strong> <span class="math inline">\hat\theta</span></td>
+<td>we get <strong>as many</strong> <span class="math inline">\hat\theta^*</span> as we like</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The bet is that the relationship between <span class="math inline">\hat\theta^*</span> and <span class="math inline">\hat\theta</span> mimics the relationship between <span class="math inline">\hat\theta</span> and the truth <span class="math inline">\theta</span>.</p>
+</section>
+<section id="the-bootstrap-machine" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="the-bootstrap-machine">The bootstrap machine</h2>
+<p>Pick a dataset and a statistic, then resample. The top panel shows your data as a row of tickets: in each resample, filled tickets were drawn and the number above them says how many times. The bottom panel collects every <span class="math inline">\hat\theta^*</span> you’ve produced.</p>
+<div class="bench column-page-right">
+<pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
+#|   shinylive does not work in self-contained HTML documents.
+#|   Please set `embed-resources: false` in your metadata.
+#| standalone: true
+#| viewerHeight: 640
+library(shiny)
+library(bslib)
+
+ink &lt;- "#1B2559"; red &lt;- "#D6334A"; blue &lt;- "#2463EB"; grey &lt;- "#9AA3B5"; green &lt;- "#1F8A5B"
+base_par &lt;- function() {
+  par(mar = c(4, 4.4, 1.2, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.85)
+}
+
+set.seed(2024)
+datasets &lt;- list(
+  "25 dice throws (from the slides)" = c(rep(1, 2), rep(2, 1), rep(3, 8), rep(4, 7), rep(5, 3), rep(6, 4)),
+  "30 claim waiting times, days (skewed)" = round(rexp(30, 1 / 5), 1),
+  "40 monthly incomes, EUR (heavy right tail)" = round(rlnorm(40, log(1200), 0.7))
+)
+stats &lt;- list("mean" = mean, "median" = median, "standard deviation" = sd)
+
+ui &lt;- page_sidebar(
+  sidebar = sidebar(
+    width = 270,
+    selectInput("data", "Data", names(datasets)),
+    radioButtons("stat", "Statistic θ", names(stats), inline = TRUE),
+    actionButton("one", "Resample once", class = "btn-primary"),
+    actionButton("hundred", "Resample 100 times"),
+    actionButton("thousand", "Resample 1,000 times"),
+    actionButton("reset", "Start over", class = "btn-link"),
+    uiOutput("summary")
+  ),
+  card(card_header("Your data as tickets, and the latest bootstrap sample"),
+       plotOutput("tickets", height = "210px")),
+  card(card_header("The bootstrap distribution of θ̂*"),
+       plotOutput("boot", height = "260px"))
+)
+
+server &lt;- function(input, output, session) {
+  x &lt;- reactive(datasets[[input$data]])
+  f &lt;- reactive(stats[[input$stat]])
+  boots &lt;- reactiveVal(numeric())
+  last_idx &lt;- reactiveVal(NULL)
+
+  resample &lt;- function(B) {
+    n &lt;- length(x())
+    idx &lt;- replicate(B, sample.int(n, n, replace = TRUE), simplify = FALSE)
+    last_idx(idx[[B]])
+    boots(c(boots(), vapply(idx, function(i) f()(x()[i]), numeric(1))))
+  }
+  observeEvent(input$one, resample(1))
+  observeEvent(input$hundred, resample(100))
+  observeEvent(input$thousand, resample(1000))
+  observeEvent(list(input$reset, input$data, input$stat), {
+    boots(numeric()); last_idx(NULL)
+  }, ignoreInit = TRUE)
+
+  output$tickets &lt;- renderPlot({
+    v &lt;- x(); n &lt;- length(v)
+    counts &lt;- if (is.null(last_idx())) rep(0, n) else tabulate(last_idx(), n)
+    base_par()
+    par(mar = c(2.5, 4.4, 1.5, 1))
+    plot(seq_len(n), v, type = "n", xlab = "", ylab = "value",
+         ylim = range(v) + c(-0.08, 0.2) * diff(range(v)), xaxt = "n")
+    mtext("observation number", side = 1, line = 0.8, col = ink, cex = 0.85)
+    points(seq_len(n), v, pch = 21, cex = 1.3 + 0.5 * pmin(counts, 4),
+           bg = ifelse(counts &gt; 0,
+                       vapply(0.35 + 0.15 * pmin(counts, 4), function(a) adjustcolor(red, a), ""),
+                       "white"),
+           col = ifelse(counts &gt; 0, red, grey), lwd = 1.5)
+    if (any(counts &gt; 1)) {
+      text(which(counts &gt; 1), v[counts &gt; 1], paste0("×", counts[counts &gt; 1]),
+           pos = 3, offset = 0.9, col = red, cex = 0.85, font = 2)
+    }
+    if (!is.null(last_idx())) {
+      mtext(sprintf("never drawn this time: %d of %d observations", sum(counts == 0), n),
+            side = 3, adj = 1, col = grey, cex = 0.8, line = 0.1)
+    }
+  })
+
+  output$boot &lt;- renderPlot({
+    b &lt;- boots(); th &lt;- f()(x())
+    base_par()
+    if (length(b) == 0) {
+      plot.new()
+      text(0.5, 0.5, "Resample to start filling this in", col = grey, cex = 1.1)
+      return(invisible())
+    }
+    rng &lt;- range(c(b, th)); pad &lt;- 0.05 * max(diff(rng), 1e-6)
+    h &lt;- hist(b, breaks = seq(rng[1] - pad, rng[2] + pad, length.out = 36), plot = FALSE)
+    plot(h, col = adjustcolor(red, 0.35), border = "white", main = "",
+         xlab = paste0("θ̂* (", input$stat, " of each bootstrap sample)"), ylab = "count")
+    abline(v = th, col = blue, lwd = 3)
+    mtext("θ̂ from your data", side = 3, at = th, col = blue, cex = 0.85, line = 0.1)
+    if (length(b) &gt;= 100) {
+      q &lt;- quantile(b, c(0.025, 0.975))
+      abline(v = q, col = green, lwd = 2.5, lty = 2)
+    }
+  })
+
+  output$summary &lt;- renderUI({
+    b &lt;- boots(); v &lt;- x(); th &lt;- f()(v)
+    items &lt;- list(tags$p(style = "margin:.2rem 0;", sprintf("θ̂ from your data: %.3f", th)),
+                  tags$p(style = "margin:.2rem 0;", sprintf("Bootstrap draws so far: B = %d", length(b))))
+    if (length(b) &gt;= 2) {
+      items &lt;- c(items, list(tags$p(style = "margin:.2rem 0;", "Bootstrap standard error: ",
+                                    tags$strong(sprintf("%.3f", sd(b))))))
+    }
+    if (length(b) &gt;= 100) {
+      q &lt;- quantile(b, c(0.025, 0.975))
+      items &lt;- c(items, list(tags$p(style = paste0("margin:.2rem 0;color:", green), "95% percentile interval: ",
+                                    tags$strong(sprintf("[%.3f, %.3f]", q[1], q[2])))))
+      if (input$stat == "mean") {
+        tq &lt;- qt(0.975, length(v) - 1) * sd(v) / sqrt(length(v))
+        items &lt;- c(items, list(tags$p(style = "margin:.2rem 0;color:#4A5578;",
+                                      sprintf("Textbook t-interval: [%.3f, %.3f]", mean(v) - tq, mean(v) + tq))))
+      }
+    } else if (length(b) &gt; 0) {
+      items &lt;- c(items, list(tags$p(style = "margin:.2rem 0;color:#4A5578;",
+                                    "The 95% interval appears after 100 draws.")))
+    }
+    tags$div(style = "font-size:.9rem;margin-top:.8rem;", items)
+  })
+}
+
+shinyApp(ui, server)</code></pre>
+</div>
+<div class="try-this">
+<p><strong>Try this</strong></p>
+<ol type="1">
+<li>Press <em>Resample once</em> several times with the dice data. About a third of the tickets are never drawn each time; on average <span class="math inline">(1 - 1/n)^n \approx 37\%</span> are left out. That’s how a resample differs from the original.</li>
+<li>Resample 1,000 times with the <strong>mean</strong>. The green 95% interval lands very close to the textbook t-interval. When the textbook formula works, the bootstrap agrees with it.</li>
+<li>Switch to the <strong>median</strong> of the dice. The bootstrap distribution is lumpy, piling up on a few values, because the median of whole numbers can only take a few values. No neat formula here, but the bootstrap still gives you a standard error.</li>
+<li>Try the incomes with the <strong>standard deviation</strong>. The distribution is skewed: one or two very large incomes dominate whenever they’re drawn several times. A symmetric “estimate ± 2 SE” interval would hide that.</li>
+</ol>
+</div>
+<section id="the-algorithm-step-by-step" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="the-algorithm-step-by-step">The algorithm, step by step</h3>
+<ol type="1">
+<li>From your data <span class="math inline">X_1, \dots, X_n</span>, draw <span class="math inline">n</span> observations <strong>with replacement</strong>. In R: <code>sample(x, replace = TRUE)</code>.</li>
+<li>Compute the statistic on this resample to get <span class="math inline">\hat\theta^*_b</span>.</li>
+<li>Repeat steps 1 and 2 many times, <span class="math inline">b = 1, \dots, B</span> (say <span class="math inline">B = 2000</span>).</li>
+<li>Use the collection <span class="math inline">\hat\theta^*_1, \dots, \hat\theta^*_B</span>:
+<ul>
+<li>its standard deviation is the <strong>bootstrap standard error</strong>;</li>
+<li>its 2.5% and 97.5% quantiles give a <strong>95% percentile interval</strong>;</li>
+<li>its mean minus <span class="math inline">\hat\theta</span> estimates the <strong>bias</strong> of your estimator.</li>
+</ul></li>
+</ol>
+<div class="decoder">
+<p><span class="decoder-title">Formula decoder</span></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>In words</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">F</span></td>
+<td>the true population distribution; unknown</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\hat F_n</span></td>
+<td>the empirical distribution: put probability <span class="math inline">1/n</span> on each data point</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\hat\theta</span></td>
+<td>your estimate from the real data</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\hat\theta^*_b</span></td>
+<td>the same estimate computed on bootstrap sample number <span class="math inline">b</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">B</span></td>
+<td>number of bootstrap samples; more <span class="math inline">B</span> only removes simulation noise, it doesn’t add information</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p><span class="scribble blue">B → ∞ makes the bootstrap <em>exact about your data</em>, not about the world</span></p>
+</div></div></section>
+<section id="when-is-the-bootstrap-worth-it" class="level3">
+<h3 class="anchored" data-anchor-id="when-is-the-bootstrap-worth-it">When is the bootstrap worth it?</h3>
+<p>The slides list four situations:</p>
+<ul>
+<li><strong>Small samples</strong>, where asymptotic approximations are unreliable (say <span class="math inline">n = 15</span> in a regression).</li>
+<li><strong>Complex estimators</strong> where nobody has derived the asymptotic distribution, for example the output of a numerical optimisation.</li>
+<li><strong>The formula depends on unknowns.</strong> The sample median is approximately <span class="math inline">N\big(m, \tfrac{1}{4nf(m)^2}\big)</span>, which needs the density <span class="math inline">f</span> at the median, which you don’t know.</li>
+<li><strong>Doubtful assumptions</strong>, such as normality for stock returns that have fat tails.</li>
+</ul>
+</section>
+</section>
+<section id="choosing-between-estimators" class="level2">
+<h2 class="anchored" data-anchor-id="choosing-between-estimators">Choosing between estimators</h2>
+<p>Suppose you have two estimators and can only use one. One is <strong>unbiased but noisy</strong>: right on average, but any single estimate can land far away. The other is <strong>slightly biased but steady</strong>: always a bit off, but never by much. Which bag would you pick from, knowing you only get to draw once?</p>
+<p>A common answer is to pick whichever has the smaller <strong>mean squared error</strong>, <span class="math inline">\text{MSE} = \text{bias}^2 + \text{variance}</span>. The bootstrap lets you estimate both pieces for estimators whose properties you can’t work out on paper. You’ll do exactly that in the lab.</p>
+</section>
+<section id="when-the-bootstrap-fails" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="when-the-bootstrap-fails">When the bootstrap fails</h2>
+<p>The bootstrap is general, not magic. Its classic failure is the <strong>sample maximum</strong>. Say the data are uniform between 0 and an unknown <span class="math inline">\theta_0</span>, and you estimate <span class="math inline">\theta_0</span> by the largest observation. A bootstrap resample can never produce anything larger than the original maximum, and it contains that exact maximum with probability <span class="math inline">1 - (1 - 1/n)^n \to 1 - e^{-1} \approx 63\%</span>. So 63% of the bootstrap estimates are <em>exactly</em> <span class="math inline">\hat\theta</span>, while real samples essentially never hit the true value exactly.</p>
+<p>The fix in the slides is <strong>subsampling</strong>: draw <em>smaller</em> samples of size <span class="math inline">m &lt; n</span> <em>without</em> replacement. Each subsample really is a sample from the true distribution, just a smaller one.</p>
+<div class="bench column-page-right">
+<pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
+#|   shinylive does not work in self-contained HTML documents.
+#|   Please set `embed-resources: false` in your metadata.
+#| standalone: true
+#| viewerHeight: 520
+library(shiny)
+library(bslib)
+
+ink &lt;- "#1B2559"; red &lt;- "#D6334A"; blue &lt;- "#2463EB"; grey &lt;- "#9AA3B5"
+base_par &lt;- function() {
+  par(mar = c(4, 4.4, 1.2, 1), las = 1, bty = "l", col.axis = ink,
+      col.lab = ink, fg = grey, cex.axis = 0.85)
+}
+theta0 &lt;- 1
+B &lt;- 2000
+
+ui &lt;- page_sidebar(
+  sidebar = sidebar(
+    width = 270,
+    sliderInput("n", "Sample size n", min = 20, max = 400, value = 100, step = 10),
+    radioButtons("method", "Method",
+                 c("Bootstrap: n draws with replacement" = "boot",
+                   "Subsampling: m draws without replacement" = "sub")),
+    conditionalPanel("input.method == 'sub'",
+      sliderInput("m", "Subsample size m", min = 5, max = 200, value = 20, step = 5)),
+    actionButton("new", "Draw a new original sample"),
+    uiOutput("stats")
+  ),
+  card(card_header("Scaled error of the sample maximum: bootstrap world vs reality"),
+       plotOutput("hist", height = "400px"))
+)
+
+server &lt;- function(input, output, session) {
+  observeEvent(input$n, updateSliderInput(session, "m", max = input$n - 5,
+                                          value = min(input$m, input$n - 5)))
+  x &lt;- reactive({ input$new; runif(input$n, 0, theta0) })
+
+  tstar &lt;- reactive({
+    v &lt;- x(); n &lt;- length(v); th &lt;- max(v)
+    if (input$method == "boot") {
+      replicate(B, n * (max(sample(v, n, replace = TRUE)) - th))
+    } else {
+      m &lt;- min(input$m, n - 5)
+      replicate(B, m * (max(sample(v, m, replace = FALSE)) - th))
+    }
+  })
+
+  output$hist &lt;- renderPlot({
+    t &lt;- tstar(); p0 &lt;- mean(t == 0)
+    neg &lt;- t[t &lt; 0]
+    base_par()
+    brks &lt;- seq(-7, 0, by = 0.25)
+    neg &lt;- neg[neg &gt; -7]
+    h &lt;- hist(neg, breaks = brks, plot = FALSE)
+    dens &lt;- h$density * length(neg) / length(t)
+    plot(NA, xlim = c(-6, 1.6), ylim = c(0, 1.05),
+         xlab = "scaled error: n × (estimate − truth), or its resampling copy", ylab = "density")
+    rect(h$breaks[-length(h$breaks)], 0, h$breaks[-1], dens,
+         col = adjustcolor(red, 0.3), border = "white")
+    tt &lt;- seq(-7, 0, length.out = 300)
+    lines(tt, exp(tt / theta0) / theta0, col = blue, lwd = 3)
+    segments(0, 0, 0, min(p0 * 1.6, 1.02), col = red, lwd = 8, lend = 1)
+    text(0.05, min(p0 * 1.6, 1.02), sprintf("%.0f%% of draws\nexactly zero", 100 * p0),
+         pos = 4, col = red, cex = 0.85, xpd = TRUE)
+    legend("topleft", bty = "n", cex = 0.85, text.col = ink,
+           fill = c(adjustcolor(red, 0.3), NA), border = c("white", NA),
+           lwd = c(NA, 3), col = c(NA, blue),
+           legend = c("resampling distribution", "true distribution (reality)"))
+  })
+
+  output$stats &lt;- renderUI({
+    t &lt;- tstar(); n &lt;- input$n
+    theory &lt;- if (input$method == "boot") 1 - (1 - 1 / n)^n else min(input$m, n - 5) / n
+    tags$div(style = "font-size:.9rem;margin-top:.8rem;",
+      tags$p(style = "margin:.2rem 0;", "Share of resamples with error exactly 0: ",
+             tags$strong(style = paste0("color:", red), sprintf("%.1f%%", 100 * mean(t == 0)))),
+      tags$p(style = "margin:.2rem 0;", sprintf("Theory for this method: %.1f%%", 100 * theory)),
+      tags$p(style = "margin:.2rem 0;", "In reality: ", tags$strong("0%")),
+      tags$p(style = "margin:.4rem 0;color:#4A5578;",
+             "The blue curve is the true distribution of n × (max − θ₀): exponential, and never exactly zero."))
+  })
+}
+
+shinyApp(ui, server)</code></pre>
+</div>
+<div class="try-this">
+<p><strong>Try this</strong></p>
+<ol type="1">
+<li>With the bootstrap, change <span class="math inline">n</span> from 20 to 400. The spike at zero stays at about 63%. More data doesn’t cure it: the bootstrap is <strong>inconsistent</strong> here.</li>
+<li>Switch to subsampling with <span class="math inline">m = 20</span> and <span class="math inline">n = 400</span>. The spike shrinks to about <span class="math inline">m/n = 5\%</span> and the histogram follows the blue curve.</li>
+<li>Now push <span class="math inline">m</span> up towards <span class="math inline">n</span>. The spike grows back. Subsampling needs <span class="math inline">m</span> to be small relative to <span class="math inline">n</span>, and choosing <span class="math inline">m</span> in practice is the method’s weak spot.</li>
+</ol>
+</div>
+<section id="why-it-fails-in-one-sentence" class="level3">
+<h3 class="anchored" data-anchor-id="why-it-fails-in-one-sentence">Why it fails, in one sentence</h3>
+<p>The bootstrap works when small changes in the data-generating distribution lead to small changes in the sampling distribution of your statistic. At the edge of the support (the maximum) or at the edge of the parameter space (say a mean restricted to be <span class="math inline">\geq 0</span> whose true value is 0, as in Andrews, 2000), that smoothness breaks down, and so does the bootstrap. Beran and Ducharme (1991) give the formal conditions if you want the full story.</p>
+</section>
+</section>
+<section id="going-further" class="level2">
+<h2 class="anchored" data-anchor-id="going-further">Going further</h2>
+<p>The slides also include an advanced example (marked with a star): testing whether a set of stamps was printed on one or two kinds of paper, by counting the modes of a density estimate. It uses a <strong>smooth bootstrap</strong>, which resamples from a smoothed version of the data rather than from the raw points. It’s a good illustration that the bootstrap is a family of ideas, not one recipe: you choose <em>what</em> to resample from to match your question.</p>
+<p>For more, Efron and Tibshirani’s <em>An Introduction to the Bootstrap</em> is the classic by the method’s inventors, and the <a href="https://www.stat.auckland.ac.nz/~wild/BootAnim/">bootstrap animations by Chris Wild</a> are a nice visual companion.</p>
+</section>
+<section id="check-yourself" class="level2">
+<h2 class="anchored" data-anchor-id="check-yourself">Check yourself</h2>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+1. Why must the resampling be with replacement?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Drawing <span class="math inline">n</span> out of <span class="math inline">n</span> without replacement gives back exactly the original data every time, just shuffled, so every <span class="math inline">\hat\theta^*</span> would equal <span class="math inline">\hat\theta</span> and there’d be no variation to measure.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+2. You increase B from 1,000 to 100,000. Does your confidence interval get narrower?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Essentially no. It gets <em>more precise as a description of your data</em>, since the simulation noise shrinks. The interval’s width reflects the information in your <span class="math inline">n</span> observations, and only more data can shrink that.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+3. Name a statistic for which the ordinary bootstrap is unreliable.
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The sample maximum (or minimum) when it estimates the edge of the distribution’s support; also estimates whose true value sits on the boundary of the allowed parameter space.</p>
+</div>
+</div>
+</div>
+<p><strong>Next:</strong> the <a href="../labs/03-bootstrap-lab.html">bootstrap lab</a>, where you write the bootstrap loop yourself, bootstrap a regression slope, and compare two estimators by their mean squared error.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../labs/02-likelihood-lab.html" class="pagination-link" aria-label="Lab">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Lab</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../labs/03-bootstrap-lab.html" class="pagination-link" aria-label="Lab">
+        <span class="nav-page-text">Lab</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Built around the Econometrics lecture notes by Lukáš Lafférs (Matej Bel University).</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+<p>Runs R in your browser via webR and Shinylive.</p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

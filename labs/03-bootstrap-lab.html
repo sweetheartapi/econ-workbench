@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.32">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>Bootstrap lab – Econometrics Workbench</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -73,10 +79,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-c3e7eccab66ddab53749d7447fc1e703.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-00f56c4b4862b9c280db9d61b785b0ba.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-aeef5c6284bdb38755a4a5ee78839d5d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-a5ad050264b750a9b1a337ed03102d4a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="../site_libs/quarto-contrib/live-runtime/live-runtime.js" type="module"></script>
 <link href="../site_libs/quarto-contrib/live-runtime/live-runtime.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
@@ -137,7 +143,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -313,7 +319,7 @@ window.Quarto = {
 
 
 <p>The whole bootstrap fits in one line of R:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">replicate</span>(B, <span class="fu">statistic</span>(<span class="fu">sample</span>(data, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">replicate</span>(B, <span class="fu">statistic</span>(<span class="fu">sample</span>(data, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>sample(data, replace = TRUE)</code> draws a bootstrap sample of the same size as your data; <code>replicate(B, ...)</code> does it <code>B</code> times. Everything in this lab builds on that line.</p>
 <section id="exercise-1-bootstrap-the-median" class="level2">
 <h2 class="anchored" data-anchor-id="exercise-1-bootstrap-the-median">Exercise 1: bootstrap the median</h2>
@@ -342,10 +348,10 @@ eyJhdHRyIjp7ImNoZWNrIjp0cnVlLCJlZGl0Ijp0cnVlLCJldmFsIjp0cnVlLCJleGVyY2lzZSI6ImJv
 <p>Inside <code>median()</code>, draw a resample of <code>dice</code> with replacement: <code>sample(dice, replace = TRUE)</code>.</p>
 </div>
 <div class="webr-ojs-exercise exercise-solution d-none" data-exercise="boot_median">
-<div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>boot_medians <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">2000</span>, <span class="fu">median</span>(<span class="fu">sample</span>(dice, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>boot_medians <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">2000</span>, <span class="fu">median</span>(<span class="fu">sample</span>(dice, <span class="at">replace =</span> <span class="cn">TRUE</span>)))</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(boot_medians, <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="fl">0.75</span>, <span class="fl">6.25</span>, <span class="at">by =</span> <span class="fl">0.25</span>), <span class="at">col =</span> <span class="st">"#D6334A55"</span>,</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"2,000 bootstrap medians"</span>, <span class="at">xlab =</span> <span class="st">"median"</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>boot_medians</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>boot_medians</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="exercise-2-a-percentile-interval" class="level2">
@@ -375,9 +381,9 @@ eyJhdHRyIjp7ImNoZWNrIjp0cnVlLCJlZGl0Ijp0cnVlLCJldmFsIjp0cnVlLCJleGVyY2lzZSI6InBl
 <p><code>c(0.025, 0.975)</code></p>
 </div>
 <div class="webr-ojs-exercise exercise-solution d-none" data-exercise="percentile">
-<div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ci_boot <span class="ot">&lt;-</span> <span class="fu">quantile</span>(boot_means, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ci_boot <span class="ot">&lt;-</span> <span class="fu">quantile</span>(boot_means, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ci_t    <span class="ot">&lt;-</span> <span class="fu">t.test</span>(dice)<span class="sc">$</span>conf.int</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">bootstrap =</span> ci_boot, <span class="at">textbook_t =</span> ci_t)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">bootstrap =</span> ci_boot, <span class="at">textbook_t =</span> ci_t)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="exercise-3-bootstrap-a-regression-slope" class="level2">
@@ -407,12 +413,12 @@ eyJhdHRyIjp7ImNoZWNrIjp0cnVlLCJlZGl0Ijp0cnVlLCJldmFsIjp0cnVlLCJleGVyY2lzZSI6InBh
 <p>Same rule as always: <code>TRUE</code>.</p>
 </div>
 <div class="webr-ojs-exercise exercise-solution d-none" data-exercise="pairs">
-<div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>boot_slopes <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">2000</span>, {</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>boot_slopes <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">2000</span>, {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  rows <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(d), <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coef</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d[rows, ]))[[<span class="st">"x"</span>]]</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">bootstrap =</span> <span class="fu">sd</span>(boot_slopes),</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">classical =</span> <span class="fu">summary</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d))<span class="sc">$</span>coefficients[<span class="st">"x"</span>, <span class="st">"Std. Error"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">classical =</span> <span class="fu">summary</span>(<span class="fu">lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d))<span class="sc">$</span>coefficients[<span class="st">"x"</span>, <span class="st">"Std. Error"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="exercise-4-pick-one-bag" class="level2 page-columns page-full">
@@ -443,10 +449,10 @@ eyJhdHRyIjp7ImNoZWNrIjp0cnVlLCJlZGl0Ijp0cnVlLCJldmFsIjp0cnVlLCJleGVyY2lzZSI6ImJh
 <p><code>mean((medians - truth)^2)</code></p>
 </div>
 <div class="webr-ojs-exercise exercise-solution d-none" data-exercise="bags">
-<div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>truth <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>mse_mean   <span class="ot">&lt;-</span> <span class="fu">mean</span>((means <span class="sc">-</span> truth)<span class="sc">^</span><span class="dv">2</span>)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>mse_median <span class="ot">&lt;-</span> <span class="fu">mean</span>((medians <span class="sc">-</span> truth)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> mse_mean, <span class="at">median =</span> mse_median)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> mse_mean, <span class="at">median =</span> mse_median)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now flip the situation. With light tails (close to normal data) the ranking reverses. Change <code>df</code> and rerun:</p>
 <div class="cell">
@@ -491,8 +497,8 @@ eyJhdHRyIjp7ImNoZWNrIjp0cnVlLCJlZGl0Ijp0cnVlLCJldmFsIjp0cnVlLCJleGVyY2lzZSI6ImJy
 <p>The original estimate is <code>max(x)</code>.</p>
 </div>
 <div class="webr-ojs-exercise exercise-solution d-none" data-exercise="breakit">
-<div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>share_equal <span class="ot">&lt;-</span> <span class="fu">mean</span>(boot_max <span class="sc">==</span> <span class="fu">max</span>(x))</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">share_equal =</span> share_equal, <span class="at">theory =</span> <span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">200</span>)<span class="sc">^</span><span class="dv">200</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>share_equal <span class="ot">&lt;-</span> <span class="fu">mean</span>(boot_max <span class="sc">==</span> <span class="fu">max</span>(x))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">share_equal =</span> share_equal, <span class="at">theory =</span> <span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">200</span>)<span class="sc">^</span><span class="dv">200</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>And the fix, subsampling: draw <code>m</code> observations <strong>without</strong> replacement, with <code>m</code> much smaller than <code>n</code>.</p>
 <div class="cell">
@@ -604,13 +610,14 @@ window._ojs.runtime.interpretFromScriptTags();
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -625,7 +632,7 @@ window._ojs.runtime.interpretFromScriptTags();
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("https:\/\/sweetheartapi\.github\.io\/econ-workbench\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

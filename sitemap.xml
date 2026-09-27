@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/about.html</loc>
+    <lastmod>2026-09-27T17:36:33.641Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/lessons/02-likelihood.html</loc>
+    <lastmod>2026-09-27T17:36:33.643Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/index.html</loc>
+    <lastmod>2026-09-27T17:36:33.641Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/labs/03-bootstrap-lab.html</loc>
+    <lastmod>2026-09-27T17:36:33.642Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/labs/02-likelihood-lab.html</loc>
+    <lastmod>2026-09-27T17:36:33.642Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/labs/01-regression-lab.html</loc>
+    <lastmod>2026-09-27T17:36:33.641Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/lessons/03-bootstrap.html</loc>
+    <lastmod>2026-09-27T17:36:33.643Z</lastmod>
+  </url>
+  <url>
+    <loc>https://sweetheartapi.github.io/econ-workbench/lessons/01-regression.html</loc>
+    <lastmod>2026-09-27T17:36:33.642Z</lastmod>
+  </url>
+</urlset>
